@@ -1,0 +1,26 @@
+<% content_for :title, "Tickets" %>
+<div class="page-head">
+  <h1>Support inbox</h1>
+  <div class="filter-row">
+    <%= link_to "Inbox", admin_tickets_path, class: "chip #{'chip--on' if params[:status].blank?}" %>
+    <% Ticket.statuses.keys.each do |s| %>
+      <%= link_to s.humanize, admin_tickets_path(status: s), class: "chip #{'chip--on' if params[:status] == s}" %>
+    <% end %>
+  </div>
+</div>
+
+<table class="table">
+  <thead><tr><th>Subject</th><th>From</th><th>Priority</th><th>Status</th><th>Last activity</th></tr></thead>
+  <tbody>
+    <% @tickets.each do |t| %>
+      <tr>
+        <td><%= link_to t.subject, admin_ticket_path(t) %><% if t.order %> <span class="hint mono"><%= t.order.number %></span><% end %></td>
+        <td><%= t.email %></td>
+        <td><%= t.priority %></td>
+        <td><%= status_chip(t.status) %></td>
+        <td><%= t.last_message_at ? "#{time_ago_in_words(t.last_message_at)} ago" : "—" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= render "shared/pagination", pagy: @pagy %>

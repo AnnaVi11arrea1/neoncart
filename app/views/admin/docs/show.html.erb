@@ -1,0 +1,133 @@
+<% content_for :title, "API docs" %>
+<h1>Partner API</h1>
+<p class="hint">Base URL <span class="mono"><%= Rails.configuration.x.store_url %>/api/v1</span> · JSON over HTTPS. Create a key under <%= link_to "API keys", admin_api_keys_path %>, then send it as a Bearer token. Browser calls from allowlisted origins (<span class="mono">ALLOWED_ORIGINS</span>) are permitted via CORS.</p>
+
+<section class="panel">
+  <h2>Authentication</h2>
+  <pre class="mono">Authorization: Bearer nc_live_xxxxxxxxxxxxxxxxxxxxxxxx</pre>
+  <p class="hint">Scopes: <span class="mono">products:read</span>, <span class="mono">orders:read</span>, <span class="mono">orders:write</span> (create via Stripe checkout), <span class="mono">orders:write_paid</span> (create already-paid orders).</p>
+</section>
+
+<section class="panel">
+  <h2>GET /products</h2>
+  <p>List active products. Query: <span class="mono">q</span>, <span class="mono">limit</span> (max 100), <span class="mono">offset</span>. Scope: <span class="mono">products:read</span>.</p>
+  <pre class="mono">curl <%= Rails.configuration.x.store_url %>/api/v1/products?limit=20 \
+  -H "Authorization: Bearer $KEY"</pre>
+  <pre class="mono">{
+  "products": [
+    {
+      "slug": "nebula-tee",
+      "title": "Nebula Tee",
+      "price_cents": 3200,
+      "currency": "usd",
+      "category": "apparel",
+      "tags": ["uv","apparel"],
+      "image_urls": ["https://…"],
+      "url": "<%= Rails.configuration.x.store_url %>/products/nebula-tee"
+    }
+  ]
+}</pre>
+</section>
+
+<section class="panel">
+  <h2>GET /products/:slug</h2>
+  <p>Full product incl. variants. Scope: <span class="mono">products:read</span>.</p>
+  <pre class="mono">{
+  "product": {
+    "slug": "nebula-tee",
+    "title": "Nebula Tee",
+    "description": "…",
+    "price_cents": 3200,
+    "variants": [
+      { "id": 12, "sku": "NBL-S", "title": "S", "price_cents": 3200, "options": {"size":"S"} }
+    ]
+  }
+}</pre>
+</section>
+
+<section class="panel">
+  <h2>POST /orders</h2>
+  <p>Create an order. Two modes via the <span class="mono">payment</span> field:</p>
+  <p><strong>1. Hosted checkout</strong> (default) — returns a <span class="mono">checkout_url</span>; send the buyer there to pay by card / Google Pay / Apple Pay. Scope: <span class="mono">orders:write</span>.</p>
+  <pre class="mono">curl -X POST <%= Rails.configuration.x.store_url %>/api/v1/orders \
+  -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "payment": "checkout",
+    "order": {
+      "email": "fan@example.com",
+      "items": [{ "product_slug": "nebula-tee", "variant_id": 12, "quantity": 1 }],
+      "shipping_address": {
+        "name": "Ada Fan", "line1": "1 Glow St", "city": "Joliet",
+        "state": "IL", "postal_code": "60431", "country": "US"
+      }
+    }
+  }'</pre>
+  <pre class="mono">{
+  "order": { "number": "EF-2607-A1B2C3", "status": "pending", "total_cents": 3200, "status_url": "…" },
+  "checkout_url": "https://checkout.stripe.com/c/pay/…"
+}</pre>
+
+  <p><strong>2. External payment</strong> — you already collected payment; the order enters as <span class="mono">paid</span> and fulfillment starts immediately. Scope: <span class="mono">orders:write_paid</span>.</p>
+  <pre class="mono">curl -X POST <%= Rails.configuration.x.store_url %>/api/v1/orders \
+  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d '{ "payment": "external", "order": { "email": "fan@example.com",
+        "items": [{ "product_slug": "nebula-tee", "quantity": 2 }],
+        "shipping_address": { "name": "Ada Fan", "line1": "1 Glow St",
+          "city": "Joliet", "state": "IL", "postal_code": "60431", "country": "US" } } }'</pre>
+</section>
+
+<section class="panel">
+  <h2>GET /orders/:number</h2>
+  <p>Order status + tracking. Scope: <span class="mono">orders:read</span> or <span class="mono">orders:write</span>.</p>
+  <pre class="mono">{
+  "order": {
+    "number": "EF-2607-A1B2C3",
+    "status": "shipped",
+    "items": [{ "title": "Nebula Tee — S", "quantity": 1, "fulfillment_status": "fulfilled" }],
+    "shipments": [{ "carrier": "USPS", "tracking_number": "9400…", "tracking_url": "https://…", "status": "in_transit" }]
+  }
+}</pre>
+</section>
+
+<section class="panel">
+  <h2>GET /ping</h2>
+  <p>Auth + connectivity check. Any valid key.</p>
+  <pre class="mono">{ "ok": true, "store": "<%= Rails.configuration.x.store_name %>", "time": "2026-07-07T12:00:00Z" }</pre>
+</section>
+
+<section class="panel">
+  <h2>Outbound webhooks</h2>
+  <p>Register endpoints under <%= link_to "Webhooks", admin_webhook_endpoints_path %>. Events: <span class="mono">order.paid</span>, <span class="mono">order.shipped</span>, <span class="mono">order.status_changed</span>, <span class="mono">product.updated</span>. Each POST is signed:</p>
+  <pre class="mono">X-Neoncart-Event: order.shipped
+X-Neoncart-Signature: sha256=&lt;hmac&gt;
+
+{ "event": "order.shipped", "created_at": "…", "data": { "number": "EF-2607-A1B2C3", "status": "shipped", "shipments": [ … ] } }</pre>
+  <p>Verify in Ruby:</p>
+  <pre class="mono">expected = "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", ENV["NEONCART_WEBHOOK_SECRET"], request.raw_post)
+ActiveSupport::SecurityUtils.secure_compare(expected, request.headers["X-Neoncart-Signature"])</pre>
+  <p>Verify in Node:</p>
+  <pre class="mono">const h = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+const ok = `sha256=${h}` === req.headers["x-neoncart-signature"];</pre>
+</section>
+
+<section class="panel">
+  <h2>Browser integration (FestConnect / goVend)</h2>
+  <p>Add the partner's origin to <span class="mono">ALLOWED_ORIGINS</span>, then fetch directly:</p>
+  <pre class="mono">// list products on the partner site
+const res = await fetch("<%= Rails.configuration.x.store_url %>/api/v1/products", {
+  headers: { Authorization: `Bearer ${KEY}` }
+});
+const { products } = await res.json();
+
+// create an order and forward the buyer to Stripe
+const order = await fetch("<%= Rails.configuration.x.store_url %>/api/v1/orders", {
+  method: "POST",
+  headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
+  body: JSON.stringify({
+    payment: "checkout",
+    order: { email, items: [{ product_slug, quantity: 1 }], shipping_address }
+  })
+}).then(r => r.json());
+window.location = order.checkout_url;</pre>
+</section>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="uv">
+  <head>
+    <title><%= content_for(:title) || "Admin" %> · <%= store_name %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="admin-body">
+    <div class="uv-tube" aria-hidden="true"></div>
+    <div class="admin-shell">
+      <aside class="admin-nav">
+        <p class="admin-brand"><%= link_to store_name, root_path %><span class="admin-brand__tag">console</span></p>
+        <nav>
+          <%= nav_link "Dashboard", admin_root_path %>
+          <%= nav_link "Orders", admin_orders_path %>
+          <%= nav_link "Fulfillment queue", admin_fulfillments_path %>
+          <%= nav_link "Products", admin_products_path %>
+          <%= nav_link "Tickets", admin_tickets_path %>
+          <%= nav_link "Suppliers", admin_suppliers_path %>
+          <%= nav_link "API keys", admin_api_keys_path %>
+          <%= nav_link "Webhooks", admin_webhook_endpoints_path %>
+          <%= nav_link "API docs", admin_docs_path %>
+          <%= nav_link "Job queue", admin_good_job_path %>
+        </nav>
+        <div class="admin-nav__foot">
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn--ghost btn--sm" %>
+        </div>
+      </aside>
+      <div class="admin-main">
+        <%= render "shared/flash" %>
+        <%= yield %>
+      </div>
+    </div>
+  </body>
+</html>

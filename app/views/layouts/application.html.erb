@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="uv">
+  <head>
+    <title><%= content_for(:title) || store_name %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <div class="uv-tube" aria-hidden="true"></div>
+    <%= render "shared/header" %>
+    <%= render "shared/flash" %>
+    <main class="container">
+      <%= yield %>
+    </main>
+    <%= render "shared/footer" %>
+  </body>
+</html>

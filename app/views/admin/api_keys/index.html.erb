@@ -1,0 +1,43 @@
+<% content_for :title, "API keys" %>
+<h1>Partner API keys</h1>
+
+<% if @new_token %>
+  <div class="flash flash--notice">
+    <p><strong>New token (copy now — shown once):</strong></p>
+    <p class="mono token-reveal"><%= @new_token %></p>
+  </div>
+<% end %>
+
+<section class="panel stack">
+  <h2>Create key</h2>
+  <%= form_with url: admin_api_keys_path, method: :post, class: "stack" do |f| %>
+    <div class="field-row">
+      <label class="field"><span>Name</span><%= f.text_field "api_key[name]", placeholder: "FestConnect", required: true %></label>
+      <label class="field"><span>Partner URL</span><%= f.text_field "api_key[partner_url]", placeholder: "https://festconnect.trickell.digital" %></label>
+    </div>
+    <fieldset class="field">
+      <span>Scopes</span>
+      <% ApiKey::SCOPES.each do |scope| %>
+        <label class="check"><%= check_box_tag "api_key[scopes][]", scope, %w[products:read orders:write].include?(scope) %> <span class="mono"><%= scope %></span></label>
+      <% end %>
+      <p class="hint"><span class="mono">orders:write_paid</span> lets a partner create orders that skip Stripe (they collected payment themselves) — grant carefully.</p>
+    </fieldset>
+    <%= f.submit "Generate key", class: "btn btn--primary btn--sm" %>
+  <% end %>
+</section>
+
+<table class="table">
+  <thead><tr><th>Name</th><th>Prefix</th><th>Scopes</th><th>Last used</th><th></th></tr></thead>
+  <tbody>
+    <% @api_keys.each do |k| %>
+      <tr>
+        <td><%= k.name %><% if k.partner_url %> <span class="hint"><%= k.partner_url %></span><% end %></td>
+        <td class="mono"><%= k.prefix %>…</td>
+        <td class="mono hint"><%= k.scopes.join(" ") %></td>
+        <td class="hint"><%= k.last_used_at ? "#{time_ago_in_words(k.last_used_at)} ago" : "never" %></td>
+        <td><% if k.active %><%= button_to "Revoke", admin_api_key_path(k), method: :delete, class: "linklike", data: { turbo_confirm: "Revoke #{k.name}?" } %><% else %><span class="hint">revoked</span><% end %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p class="hint">Endpoint reference lives in <%= link_to "API docs", admin_docs_path %>.</p>

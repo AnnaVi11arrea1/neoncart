@@ -1,0 +1,35 @@
+# Reverse proxy for Neoncart on the Jetson — same pattern as goVend.
+# /etc/nginx/sites-available/neoncart -> symlink into sites-enabled
+# Then: sudo certbot --nginx -d shop.yourdomain.com   (or use your
+# Cloudflare Tunnel and skip certbot entirely — tunnel handles TLS).
+
+upstream neoncart {
+  server 127.0.0.1:3001;   # match PORT in the systemd unit
+}
+
+server {
+  listen 80;
+  server_name shop.yourdomain.com;
+
+  root /home/anna/neoncart/public;
+  client_max_body_size 20M;
+
+  location ~ ^/assets/ {
+    expires max;
+    add_header Cache-Control public;
+    gzip_static on;
+  }
+
+  location / {
+    try_files $uri @app;
+  }
+
+  location @app {
+    proxy_pass http://neoncart;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 60s;
+  }
+}

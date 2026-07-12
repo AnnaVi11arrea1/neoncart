@@ -1,0 +1,70 @@
+Rails.application.routes.draw do
+  devise_for :users
+
+  root "home#index"
+
+  resources :products, only: %i[index show], param: :slug
+  resource :cart, only: :show
+  resources :cart_items, only: %i[create update destroy]
+  resource :checkout, only: :create
+  get "checkout/success", to: "checkouts#success"
+  get "checkout/cancel",  to: "checkouts#cancel"
+
+  # Order lookup + status (guests use number + email)
+  resources :orders, only: %i[index show], param: :number
+  get "track", to: "orders#lookup", as: :order_lookup
+  post "track", to: "orders#find"
+
+  # Support tickets
+  resources :tickets, only: %i[index new create show], param: :token do
+    resources :messages, only: :create, controller: "ticket_messages"
+  end
+
+  # Inbound payment webhooks
+  namespace :webhooks do
+    post "stripe", to: "stripe#create"
+  end
+
+  # Partner API
+  namespace :api do
+    namespace :v1 do
+      resources :products, only: %i[index show], param: :slug
+      resources :orders, only: %i[create show], param: :number
+      get "ping", to: "base#ping"
+    end
+  end
+
+  namespace :admin do
+    root "dashboard#index"
+    resources :products do
+      member { post :archive }
+    end
+    resources :orders, only: %i[index show] do
+      member do
+        post :resubmit
+        post :cancel
+        post :mark_shipped
+      end
+      resources :shipments, only: :create
+    end
+    resources :fulfillments, only: %i[index update]
+    resources :tickets, only: %i[index show update] do
+      resources :messages, only: :create, controller: "/admin/ticket_messages"
+    end
+    resources :suppliers do
+      member do
+        post :sync
+        post :test_connection
+      end
+    end
+    resources :api_keys, only: %i[index create destroy]
+    resources :webhook_endpoints, only: %i[index create update destroy]
+    get "docs", to: "docs#show"
+  end
+
+  authenticate :user, ->(u) { u.admin? } do
+    mount GoodJob::Engine => "admin/good_job", as: :admin_good_job
+  end
+
+  get "up", to: proc { [200, { "Content-Type" => "text/plain" }, ["ok"]] }
+end

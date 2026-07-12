@@ -1,0 +1,38 @@
+<%= form_with model: [:admin, product], class: "stack panel" do |f| %>
+  <% if product.errors.any? %>
+    <div class="flash flash--alert"><%= product.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <label class="field"><span>Title</span><%= f.text_field :title, required: true %></label>
+  <label class="field"><span>Description</span><%= f.text_area :description, rows: 6 %></label>
+
+  <div class="field-row">
+    <label class="field"><span>Price (USD)</span><%= f.number_field :price_dollars, value: product.price_cents / 100.0, step: 0.01, min: 0 %></label>
+    <label class="field"><span>Compare-at (optional)</span><%= f.number_field :compare_at_dollars, value: product.compare_at_price_cents.to_i / 100.0, step: 0.01, min: 0 %></label>
+    <label class="field"><span>Category</span><%= f.collection_select :category_id, Category.all, :id, :name, include_blank: "—" %></label>
+    <label class="field"><span>Status</span><%= f.select :status, Product.statuses.keys %></label>
+  </div>
+
+  <label class="field"><span>Tags (comma-separated)</span><%= f.text_field :tag_list, value: product.tags.join(", ") %></label>
+  <label class="check"><%= f.check_box :featured %> <span>Feature on homepage</span></label>
+
+  <label class="field"><span>Images (upload)</span><%= f.file_field :images, multiple: true, accept: "image/*" %></label>
+  <% if product.images.attached? %>
+    <div class="thumb-row"><% product.images.each do |img| %><%= image_tag img.variant(resize_to_limit: [120, 120]) rescue image_tag(url_for(img), width: 120) %><% end %></div>
+  <% end %>
+
+  <h2>Variants</h2>
+  <div class="stack">
+    <%= f.fields_for :variants do |vf| %>
+      <div class="field-row">
+        <label class="field"><span>Title</span><%= vf.text_field :title %></label>
+        <label class="field"><span>SKU</span><%= vf.text_field :sku %></label>
+        <label class="field"><span>Price (USD, blank = product price)</span><%= vf.number_field :price_dollars, value: vf.object.price_cents ? vf.object.price_cents / 100.0 : nil, step: 0.01 %></label>
+        <label class="check"><%= vf.check_box :available %> <span>Available</span></label>
+        <% if vf.object.persisted? %><label class="check"><%= vf.check_box :_destroy %> <span>Delete</span></label><% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= f.submit "Save product", class: "btn btn--primary" %>
+<% end %>

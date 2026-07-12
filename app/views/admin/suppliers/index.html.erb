@@ -1,0 +1,24 @@
+<% content_for :title, "Suppliers" %>
+<div class="page-head">
+  <h1>Suppliers</h1>
+  <%= link_to "＋ Add supplier", new_admin_supplier_path, class: "btn btn--primary btn--sm" %>
+</div>
+
+<table class="table">
+  <thead><tr><th>Supplier</th><th>Adapter</th><th>Mode</th><th>Last sync</th><th></th></tr></thead>
+  <tbody>
+    <% @suppliers.each do |s| %>
+      <tr>
+        <td><%= link_to s.name, edit_admin_supplier_path(s) %> <%= "· inactive" unless s.active %></td>
+        <td class="mono hint"><%= s.adapter.demodulize %></td>
+        <td><%= status_chip(s.fulfillment_mode) %></td>
+        <td class="hint"><%= s.last_sync_log || "—" %></td>
+        <td class="btn-row">
+          <%= button_to "Test connection", test_connection_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
+          <%= button_to "Sync now", sync_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p class="hint"><strong>Printify</strong> works out of the box with a Personal Access Token. <strong>ThisNew / ArtsAdd / Yoycol</strong> gate their APIs behind partner approval — run them in manual mode until you have credentials, then switch to auto and configure the endpoints in Settings JSON (see the adapter comments in <span class="mono">app/services/dropshipping/</span>).</p>

@@ -1,0 +1,16 @@
+<% content_for :title, "Support · #{store_name}" %>
+<div class="narrow">
+  <h1>Open a support ticket</h1>
+  <p class="hint">We reply by email and you can follow the thread right here.</p>
+  <%= form_with model: @ticket, url: tickets_path, class: "stack" do |f| %>
+    <% if @ticket.errors.any? %>
+      <div class="flash flash--alert"><%= @ticket.errors.full_messages.to_sentence %></div>
+    <% end %>
+    <label class="field"><span>Your name</span><%= f.text_field :name %></label>
+    <label class="field"><span>Email</span><%= f.email_field :email, required: true %></label>
+    <label class="field"><span>Subject</span><%= f.text_field :subject, required: true %></label>
+    <%= f.hidden_field :order_id %>
+    <label class="field"><span>How can we help?</span><%= f.text_area :body, rows: 6, required: true, name: "ticket[body]" %></label>
+    <%= f.submit "Send", class: "btn btn--primary" %>
+  <% end %>
+</div>

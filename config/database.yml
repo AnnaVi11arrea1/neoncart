@@ -1,0 +1,18 @@
+# Neon (serverless Postgres) — set DATABASE_URL in .env, e.g.
+# DATABASE_URL=postgres://user:pass@ep-xxxx.us-east-2.aws.neon.tech/neoncart?sslmode=require
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  url: <%= ENV.fetch("DATABASE_URL") { "postgres://localhost/neoncart_development" } %>
+
+test:
+  <<: *default
+  database: neoncart_test
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>

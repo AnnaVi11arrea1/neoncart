@@ -1,0 +1,18 @@
+<%= link_to product_path(product.slug), class: "product-card" do %>
+  <div class="product-card__img">
+    <% if (url = product.primary_image_url) %>
+      <img src="<%= url %>" alt="<%= product.title %>" loading="lazy">
+    <% else %>
+      <div class="product-card__placeholder">◈</div>
+    <% end %>
+  </div>
+  <div class="product-card__body">
+    <h3><%= product.title %></h3>
+    <p class="product-card__price">
+      <%= format_money(product.price_cents) %>
+      <% if product.compare_at_price_cents.present? && product.compare_at_price_cents > product.price_cents %>
+        <s><%= format_money(product.compare_at_price_cents) %></s>
+      <% end %>
+    </p>
+  </div>
+<% end %>

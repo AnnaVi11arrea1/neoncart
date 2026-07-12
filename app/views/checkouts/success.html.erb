@@ -1,0 +1,16 @@
+<% content_for :title, "Order confirmed · #{store_name}" %>
+<div class="confirm">
+  <% if @order && !@order.pending? %>
+    <p class="confirm__glyph">✦</p>
+    <h1>Order confirmed</h1>
+    <p>Thanks! Your order <span class="order-number mono"><%= @order.number %></span> is paid and heading into production.</p>
+    <p>A confirmation is on its way to <strong><%= @order.customer_email %></strong>. We'll email again the moment it ships, tracking included.</p>
+    <div class="hero__actions">
+      <%= link_to "View order status", order_path(@order.number), class: "btn btn--primary" %>
+      <%= link_to "Keep shopping", products_path, class: "btn btn--ghost" %>
+    </div>
+  <% else %>
+    <h1>Finalizing payment…</h1>
+    <p>Your payment is being confirmed. Refresh in a few seconds, or check <%= link_to "order tracking", order_lookup_path %>.</p>
+  <% end %>
+</div>

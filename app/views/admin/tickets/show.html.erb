@@ -1,0 +1,33 @@
+<% content_for :title, @ticket.subject %>
+<div class="page-head">
+  <h1><%= @ticket.subject %></h1>
+  <%= status_chip(@ticket.status) %>
+</div>
+<p class="hint">From <%= @ticket.name.presence || "customer" %> &lt;<%= @ticket.email %>&gt;<% if @ticket.order %> · order <%= link_to @ticket.order.number, admin_order_path(@ticket.order), class: "mono" %><% end %></p>
+
+<div class="order-grid">
+  <section class="panel">
+    <div class="thread">
+      <% @messages.each do |m| %>
+        <div class="msg msg--<%= m.author_type %>">
+          <p class="msg__meta"><%= m.from_admin? ? (m.user&.display_name || "Admin") : @ticket.email %> · <%= m.created_at.strftime("%b %-d %H:%M") %></p>
+          <%= simple_format(m.body) %>
+        </div>
+      <% end %>
+    </div>
+
+    <%= form_with url: admin_ticket_messages_path(@ticket), method: :post, class: "stack" do |f| %>
+      <label class="field"><span>Reply (emailed to customer)</span><%= f.text_area "ticket_message[body]", rows: 5, required: true %></label>
+      <%= f.submit "Send reply", class: "btn btn--primary" %>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <h2>Manage</h2>
+    <%= form_with url: admin_ticket_path(@ticket), method: :patch, class: "stack" do |f| %>
+      <label class="field"><span>Status</span><%= f.select "ticket[status]", Ticket.statuses.keys, selected: @ticket.status %></label>
+      <label class="field"><span>Priority</span><%= f.select "ticket[priority]", Ticket.priorities.keys, selected: @ticket.priority %></label>
+      <%= f.submit "Update", class: "btn btn--sm" %>
+    <% end %>
+  </section>
+</div>

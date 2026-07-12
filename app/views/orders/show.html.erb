@@ -1,0 +1,56 @@
+<% content_for :title, "Order #{@order.number} · #{store_name}" %>
+<div class="page-head">
+  <h1>Order <span class="order-number mono"><%= @order.number %></span></h1>
+  <%= status_chip(@order.status) %>
+</div>
+
+<div class="order-grid">
+  <section class="panel">
+    <h2>Items</h2>
+    <table class="table">
+      <tbody>
+        <% @order.order_items.each do |item| %>
+          <tr>
+            <td><%= item.title %><% if item.sku.present? %> <span class="hint mono"><%= item.sku %></span><% end %></td>
+            <td>×<%= item.quantity %></td>
+            <td class="mono"><%= format_money(item.line_total_cents) %></td>
+          </tr>
+        <% end %>
+        <tr class="table__total"><td>Total (incl. shipping)</td><td></td><td class="mono"><%= format_money(@order.total_cents) %></td></tr>
+      </tbody>
+    </table>
+
+    <% if @order.shipments.any? %>
+      <h2>Tracking</h2>
+      <ul class="shipments">
+        <% @order.shipments.each do |s| %>
+          <li>
+            <span class="chip chip--<%= s.status %>"><%= s.status.humanize %></span>
+            <%= s.display_carrier %> —
+            <% if s.tracking_url %>
+              <%= link_to s.tracking_number, s.tracking_url, target: "_blank", rel: "noopener", class: "mono" %>
+            <% else %>
+              <span class="mono"><%= s.tracking_number %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <h2>Timeline</h2>
+    <ol class="timeline">
+      <% @order.order_events.each do |event| %>
+        <li>
+          <span class="timeline__icon" aria-hidden="true"><%= event.icon %></span>
+          <div>
+            <p><%= event.message %></p>
+            <time class="hint"><%= event.created_at.strftime("%b %-d, %Y · %l:%M %p") %></time>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+    <p class="hint">Need help with this order? <%= link_to "Open a ticket", new_ticket_path(order_id: @order.id) %>.</p>
+  </section>
+</div>

@@ -1,0 +1,23 @@
+<% content_for :title, "#{@ticket.subject} · #{store_name}" %>
+<div class="narrow">
+  <div class="page-head">
+    <h1><%= @ticket.subject %></h1>
+    <%= status_chip(@ticket.status) %>
+  </div>
+
+  <div class="thread">
+    <% @ticket.messages.order(:created_at).each do |m| %>
+      <div class="msg msg--<%= m.author_type %>">
+        <p class="msg__meta"><%= m.from_admin? ? store_name : (@ticket.name.presence || "You") %> · <%= m.created_at.strftime("%b %-d, %l:%M %p") %></p>
+        <%= simple_format(m.body) %>
+      </div>
+    <% end %>
+  </div>
+
+  <% unless @ticket.closed? %>
+    <%= form_with url: ticket_messages_path(@ticket), method: :post, class: "stack" do |f| %>
+      <label class="field"><span>Reply</span><%= f.text_area :body, rows: 4, required: true, name: "ticket_message[body]" %></label>
+      <%= f.submit "Send reply", class: "btn btn--primary" %>
+    <% end %>
+  <% end %>
+</div>

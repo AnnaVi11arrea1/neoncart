@@ -1,0 +1,28 @@
+<% content_for :title, "Shop · #{store_name}" %>
+<div class="page-head">
+  <h1>Shop</h1>
+  <%= form_with url: products_path, method: :get, class: "searchbar" do |f| %>
+    <%= f.search_field :q, value: params[:q], placeholder: "Search the glow…", "aria-label": "Search products" %>
+    <%= f.submit "Search", class: "btn btn--sm" %>
+  <% end %>
+</div>
+
+<% if @categories.any? %>
+  <div class="filter-row">
+    <%= link_to "All", products_path(q: params[:q]), class: "chip #{'chip--on' if params[:category].blank?}" %>
+    <% @categories.each do |c| %>
+      <%= link_to c.name, products_path(category: c.slug, q: params[:q]), class: "chip #{'chip--on' if params[:category] == c.slug}" %>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @products.any? %>
+  <div class="product-grid">
+    <% @products.each do |product| %>
+      <%= render "shared/product_card", product: product %>
+    <% end %>
+  </div>
+  <% if @pagy %><%= render "shared/pagination", pagy: @pagy %><% end %>
+<% else %>
+  <div class="empty"><p>Nothing matches<%= " “#{params[:q]}”" if params[:q].present? %>. Try another search.</p></div>
+<% end %>

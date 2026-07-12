@@ -1,0 +1,21 @@
+<% content_for :title, "My tickets · #{store_name}" %>
+<div class="page-head">
+  <h1>My tickets</h1>
+  <%= link_to "New ticket", new_ticket_path, class: "btn btn--primary btn--sm" %>
+</div>
+<% if @tickets.any? %>
+  <table class="table">
+    <thead><tr><th>Subject</th><th>Status</th><th>Last activity</th></tr></thead>
+    <tbody>
+      <% @tickets.each do |t| %>
+        <tr>
+          <td><%= link_to t.subject, ticket_path(t) %></td>
+          <td><%= status_chip(t.status) %></td>
+          <td><%= t.last_message_at&.strftime("%b %-d, %Y") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty"><p>No tickets — smooth sailing.</p></div>
+<% end %>

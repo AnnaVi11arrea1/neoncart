@@ -1,0 +1,27 @@
+<header class="site-header">
+  <div class="container site-header__row">
+    <%= link_to root_path, class: "brand" do %>
+      <span class="brand__mark">◈</span> <%= store_name %>
+    <% end %>
+    <nav class="site-nav">
+      <%= nav_link "Shop", products_path %>
+      <%= nav_link "Track order", order_lookup_path %>
+      <% if preview_mode? %>
+        <%= nav_link "Support", new_ticket_path %>
+        <span class="hint">Preview mode</span>
+      <% else %>
+        <%= nav_link "Support", user_signed_in? ? tickets_path : new_ticket_path %>
+        <% if user_signed_in? %>
+          <%= nav_link "My orders", orders_path %>
+          <% if current_user.admin? %><%= nav_link "Admin", admin_root_path %><% end %>
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "linklike" %>
+        <% else %>
+          <%= nav_link "Sign in", new_user_session_path %>
+        <% end %>
+      <% end %>
+      <%= link_to cart_path, class: "cart-link" do %>
+        Cart <span class="cart-count"><%= current_cart.item_count %></span>
+      <% end %>
+    </nav>
+  </div>
+</header>

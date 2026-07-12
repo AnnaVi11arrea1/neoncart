@@ -1,0 +1,28 @@
+<% content_for :title, "Products" %>
+<div class="page-head">
+  <h1>Products</h1>
+  <%= link_to "＋ Add product manually", new_admin_product_path, class: "btn btn--primary btn--sm" %>
+</div>
+
+<%= form_with url: admin_products_path, method: :get, class: "searchbar" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Search…" %>
+  <%= f.select :status, options_for_select([["Any status", ""], "draft", "active", "archived"], params[:status]) %>
+  <%= f.submit "Filter", class: "btn btn--sm" %>
+<% end %>
+
+<table class="table">
+  <thead><tr><th>Product</th><th>Source</th><th>Price</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <% @products.each do |p| %>
+      <tr>
+        <td><%= link_to p.title, edit_admin_product_path(p) %></td>
+        <td><%= p.supplier&.name || "In-house" %></td>
+        <td class="mono"><%= format_money(p.price_cents) %></td>
+        <td><%= status_chip(p.status) %></td>
+        <td><%= button_to "Archive", archive_admin_product_path(p), method: :post, class: "linklike" unless p.archived? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= render "shared/pagination", pagy: @pagy %>
+<p class="hint">Dropshipper products arrive as <strong>draft</strong> after a sync — review pricing, then flip them to active.</p>

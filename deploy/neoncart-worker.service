@@ -1,0 +1,17 @@
+# /etc/systemd/system/neoncart-worker.service — GoodJob worker + cron
+# Runs order submission, tracking sync, product sync, emails, webhooks.
+[Unit]
+Description=Neoncart worker (GoodJob)
+After=network.target
+
+[Service]
+Type=simple
+User=anna
+WorkingDirectory=/home/anna/neoncart
+EnvironmentFile=/home/anna/neoncart/.env
+ExecStart=/home/anna/.rbenv/shims/bundle exec good_job start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

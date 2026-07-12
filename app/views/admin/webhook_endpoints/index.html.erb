@@ -1,0 +1,53 @@
+<% content_for :title, "Webhooks" %>
+<h1>Outbound webhooks</h1>
+<p class="hint">Push order and product events to partner sites (FestConnect, goVend, …). Payloads are JSON, signed with HMAC-SHA256 in the <span class="mono">X-Neoncart-Signature</span> header.</p>
+
+<section class="panel stack">
+  <h2>Add endpoint</h2>
+  <%= form_with url: admin_webhook_endpoints_path, method: :post, class: "stack" do |f| %>
+    <div class="field-row">
+      <label class="field"><span>Name</span><%= f.text_field "webhook_endpoint[name]", placeholder: "goVend", required: true %></label>
+      <label class="field"><span>URL</span><%= f.text_field "webhook_endpoint[url]", placeholder: "https://govend.ing/webhooks/everfluorescent", required: true, class: "mono" %></label>
+    </div>
+    <fieldset class="field"><span>Events</span>
+      <% WebhookEndpoint::EVENTS.each do |ev| %>
+        <label class="check"><%= check_box_tag "webhook_endpoint[events][]", ev, ev.start_with?("order.") %> <span class="mono"><%= ev %></span></label>
+      <% end %>
+    </fieldset>
+    <%= f.submit "Add endpoint", class: "btn btn--primary btn--sm" %>
+  <% end %>
+</section>
+
+<table class="table">
+  <thead><tr><th>Endpoint</th><th>Events</th><th>Signing secret</th><th>Active</th><th></th></tr></thead>
+  <tbody>
+    <% @endpoints.each do |e| %>
+      <tr>
+        <td><%= e.name %><br><span class="hint mono"><%= e.url %></span></td>
+        <td class="mono hint"><%= e.events.join(" ") %></td>
+        <td class="mono hint"><%= e.secret %></td>
+        <td>
+          <%= form_with url: admin_webhook_endpoint_path(e), method: :patch do |f| %>
+            <%= check_box_tag "webhook_endpoint[active]", "1", e.active, onchange: "this.form.requestSubmit()", "aria-label": "Active" %>
+          <% end %>
+        </td>
+        <td><%= button_to "Delete", admin_webhook_endpoint_path(e), method: :delete, class: "linklike", data: { turbo_confirm: "Delete #{e.name}?" } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>Recent deliveries</h2>
+<table class="table">
+  <thead><tr><th>Endpoint</th><th>Event</th><th>HTTP</th><th>When</th></tr></thead>
+  <tbody>
+    <% @recent_deliveries.each do |d| %>
+      <tr>
+        <td><%= d.webhook_endpoint.name %></td>
+        <td class="mono"><%= d.event %></td>
+        <td class="mono <%= d.success? ? 'ok' : 'err' %>"><%= d.response_code || "…" %></td>
+        <td class="hint"><%= time_ago_in_words(d.created_at) %> ago</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

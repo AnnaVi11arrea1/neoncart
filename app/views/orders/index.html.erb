@@ -1,0 +1,19 @@
+<% content_for :title, "My orders · #{store_name}" %>
+<h1>My orders</h1>
+<% if @orders.any? %>
+  <table class="table">
+    <thead><tr><th>Order</th><th>Placed</th><th>Total</th><th>Status</th></tr></thead>
+    <tbody>
+      <% @orders.each do |order| %>
+        <tr>
+          <td><%= link_to order.number, order_path(order.number), class: "mono" %></td>
+          <td><%= order.placed_at&.strftime("%b %-d, %Y") || "—" %></td>
+          <td class="mono"><%= format_money(order.total_cents) %></td>
+          <td><%= status_chip(order.status) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty"><p>No orders yet.</p><%= link_to "Shop now", products_path, class: "btn btn--primary" %></div>
+<% end %>

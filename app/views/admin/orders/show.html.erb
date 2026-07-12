@@ -1,0 +1,73 @@
+<% content_for :title, "Order #{@order.number}" %>
+<div class="page-head">
+  <h1>Order <span class="mono order-number"><%= @order.number %></span></h1>
+  <%= status_chip(@order.status) %>
+</div>
+
+<div class="order-grid">
+  <section class="panel">
+    <h2>Items</h2>
+    <table class="table">
+      <thead><tr><th>Item</th><th>Qty</th><th>Supplier</th><th>Fulfillment</th></tr></thead>
+      <tbody>
+        <% @order.order_items.each do |item| %>
+          <tr>
+            <td><%= item.title %><br><span class="hint mono"><%= item.sku %></span></td>
+            <td>×<%= item.quantity %></td>
+            <td><%= item.supplier&.name || "In-house" %></td>
+            <td><%= status_chip(item.fulfillment_status) %><% if item.external_order_id %><br><span class="hint mono"><%= item.external_order_id %></span><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <h2>Customer</h2>
+    <p><%= @order.customer_name %> · <%= @order.email %></p>
+    <% a = @order.shipping_address %>
+    <% if a.present? %>
+      <p class="hint"><%= [a["line1"], a["line2"], a["city"], a["state"], a["postal_code"], a["country"]].compact_blank.join(", ") %><br>
+      <%= a["phone"] %></p>
+    <% end %>
+    <p class="mono">Total <%= format_money(@order.total_cents) %> (ship <%= format_money(@order.shipping_cents) %>)</p>
+    <% if @order.stripe_payment_intent_id %>
+      <p class="hint">Stripe PI: <%= link_to @order.stripe_payment_intent_id, "https://dashboard.stripe.com/payments/#{@order.stripe_payment_intent_id}", target: "_blank", class: "mono" %></p>
+    <% end %>
+
+    <h2>Actions</h2>
+    <div class="btn-row">
+      <%= button_to "Resubmit to suppliers", resubmit_admin_order_path(@order), method: :post, class: "btn btn--sm" %>
+      <%= button_to "Mark shipped", mark_shipped_admin_order_path(@order), method: :post, class: "btn btn--sm" %>
+      <%= button_to "Cancel order", cancel_admin_order_path(@order), method: :post, class: "btn btn--sm btn--danger", data: { turbo_confirm: "Cancel #{@order.number}?" } %>
+    </div>
+
+    <h2>Add tracking manually</h2>
+    <%= form_with url: admin_order_shipments_path(@order), method: :post, class: "stack" do |f| %>
+      <div class="field-row">
+        <label class="field"><span>Carrier</span><%= f.text_field "shipment[carrier]", placeholder: "USPS" %></label>
+        <label class="field"><span>Tracking number</span><%= f.text_field "shipment[tracking_number]", required: true, class: "mono" %></label>
+      </div>
+      <label class="check"><%= check_box_tag :fulfill_manual, "1", true %> <span>Mark manual items fulfilled</span></label>
+      <%= f.submit "Add tracking + notify customer", class: "btn btn--primary btn--sm" %>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <h2>Shipments</h2>
+    <% if @order.shipments.any? %>
+      <ul class="shipments">
+        <% @order.shipments.each do |s| %>
+          <li><span class="chip chip--<%= s.status %>"><%= s.status %></span> <%= s.display_carrier %> <%= link_to s.tracking_number, s.tracking_url.to_s, target: "_blank", class: "mono" %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="hint">No shipments yet.</p>
+    <% end %>
+
+    <h2>Timeline</h2>
+    <ol class="timeline">
+      <% @order.order_events.each do |e| %>
+        <li><span class="timeline__icon"><%= e.icon %></span><div><p><%= e.message %></p><time class="hint"><%= e.created_at.strftime("%b %-d %H:%M") %></time></div></li>
+      <% end %>
+    </ol>
+  </section>
+</div>

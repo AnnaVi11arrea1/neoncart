@@ -1,0 +1,41 @@
+<% content_for :title, "Cart · #{store_name}" %>
+<h1>Your cart</h1>
+
+<% if @cart.empty? %>
+  <div class="empty">
+    <p>Your cart is empty — it's dark in here (which is fitting, honestly).</p>
+    <%= link_to "Browse the shop", products_path, class: "btn btn--primary" %>
+  </div>
+<% else %>
+  <div class="cart">
+    <table class="table">
+      <thead><tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+      <tbody>
+        <% @cart.cart_items.includes(product: :product_images).each do |item| %>
+          <tr>
+            <td>
+              <div class="cart__item">
+                <% if (url = item.product.primary_image_url) %><img src="<%= url %>" alt=""><% end %>
+                <%= link_to item.display_title, product_path(item.product.slug) %>
+              </div>
+            </td>
+            <td class="mono"><%= format_money(item.unit_price_cents) %></td>
+            <td>
+              <%= form_with url: cart_item_path(item), method: :patch, class: "qty-form" do |f| %>
+                <%= f.number_field :quantity, name: "cart_item[quantity]", value: item.quantity, min: 0, max: 99, onchange: "this.form.requestSubmit()", "aria-label": "Quantity" %>
+              <% end %>
+            </td>
+            <td class="mono"><%= format_money(item.line_total_cents) %></td>
+            <td><%= button_to "✕", cart_item_path(item), method: :delete, class: "linklike", "aria-label": "Remove #{item.display_title}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="cart__summary">
+      <p class="cart__subtotal">Subtotal <strong class="mono"><%= format_money(@cart.subtotal_cents) %></strong></p>
+      <p class="hint">Shipping and tax calculated at checkout. Pay by card, Google Pay, or Apple Pay.</p>
+      <%= button_to "Checkout →", checkout_path, method: :post, class: "btn btn--primary btn--lg btn--wide" %>
+    </div>
+  </div>
+<% end %>

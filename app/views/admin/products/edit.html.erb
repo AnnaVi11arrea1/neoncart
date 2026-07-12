@@ -1,0 +1,6 @@
+<% content_for :title, "Edit product" %>
+<div class="page-head">
+  <h1><%= @product.title %></h1>
+  <p class="hint"><%= @product.supplier ? "Synced from #{@product.supplier.name}" : "In-house product" %> · <%= link_to "view in store", product_path(@product.slug), target: "_blank" %></p>
+</div>
+<%= render "form", product: @product %>

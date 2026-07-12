@@ -1,0 +1,7 @@
+<% if pagy.pages > 1 %>
+  <nav class="pagination" aria-label="Pages">
+    <% if pagy.prev %><%= link_to "← Prev", url_for(page: pagy.prev, q: params[:q], category: params[:category], status: params[:status]) %><% end %>
+    <span class="pagination__info">Page <%= pagy.page %> of <%= pagy.pages %></span>
+    <% if pagy.next %><%= link_to "Next →", url_for(page: pagy.next, q: params[:q], category: params[:category], status: params[:status]) %><% end %>
+  </nav>
+<% end %>

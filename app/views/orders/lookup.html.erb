@@ -1,0 +1,10 @@
+<% content_for :title, "Track order · #{store_name}" %>
+<div class="narrow">
+  <h1>Track your order</h1>
+  <p class="hint">Enter the order number from your confirmation email (looks like <span class="mono">EF-2607-A1B2C3</span>).</p>
+  <%= form_with url: order_lookup_path, method: :post, class: "stack" do |f| %>
+    <label class="field"><span>Order number</span><%= f.text_field :number, required: true, class: "mono" %></label>
+    <label class="field"><span>Email used at checkout</span><%= f.email_field :email, required: true %></label>
+    <%= f.submit "Find my order", class: "btn btn--primary" %>
+  <% end %>
+</div>

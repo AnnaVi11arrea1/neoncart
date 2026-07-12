@@ -1,0 +1,24 @@
+<% content_for :title, "Orders" %>
+<h1>Orders</h1>
+<%= form_with url: admin_orders_path, method: :get, class: "searchbar" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Order # or email…" %>
+  <%= f.select :status, options_for_select([["Any status", ""]] + Order.statuses.keys, params[:status]) %>
+  <%= f.submit "Filter", class: "btn btn--sm" %>
+<% end %>
+
+<table class="table">
+  <thead><tr><th>Order</th><th>Customer</th><th>Placed</th><th>Total</th><th>Status</th><th>Items</th></tr></thead>
+  <tbody>
+    <% @orders.each do |o| %>
+      <tr>
+        <td><%= link_to o.number, admin_order_path(o), class: "mono" %></td>
+        <td><%= o.email %></td>
+        <td><%= o.placed_at&.strftime("%b %-d %H:%M") || "—" %></td>
+        <td class="mono"><%= format_money(o.total_cents) %></td>
+        <td><%= status_chip(o.status) %></td>
+        <td><%= o.order_items.sum(&:quantity) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= render "shared/pagination", pagy: @pagy %>

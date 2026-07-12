@@ -1,0 +1,50 @@
+<% content_for :title, "Dashboard" %>
+<h1>Dashboard</h1>
+
+<div class="stat-grid">
+  <div class="stat"><p class="stat__label">Revenue · 30 days</p><p class="stat__value mono"><%= format_money(@revenue_30d_cents) %></p></div>
+  <div class="stat"><p class="stat__label">Open tickets</p><p class="stat__value mono"><%= @open_tickets %></p></div>
+  <div class="stat"><p class="stat__label">Awaiting manual fulfillment</p><p class="stat__value mono"><%= @awaiting_manual %></p></div>
+  <% %w[paid processing shipped].each do |s| %>
+    <div class="stat"><p class="stat__label">Orders · <%= s %></p><p class="stat__value mono"><%= @orders_by_status.fetch(s, 0) %></p></div>
+  <% end %>
+</div>
+
+<div class="order-grid">
+  <section class="panel">
+    <h2>Recent orders</h2>
+    <table class="table">
+      <tbody>
+        <% @recent_orders.each do |o| %>
+          <tr>
+            <td><%= link_to o.number, admin_order_path(o), class: "mono" %></td>
+            <td><%= o.email %></td>
+            <td class="mono"><%= format_money(o.total_cents) %></td>
+            <td><%= status_chip(o.status) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Suppliers</h2>
+    <table class="table">
+      <tbody>
+        <% @suppliers.each do |s| %>
+          <tr>
+            <td><%= link_to s.name, edit_admin_supplier_path(s) %></td>
+            <td><%= s.fulfillment_mode %></td>
+            <td class="hint"><%= s.last_synced_at ? "synced #{time_ago_in_words(s.last_synced_at)} ago" : "never synced" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <h2>Activity</h2>
+    <ul class="feed">
+      <% @recent_events.each do |e| %>
+        <li><span class="mono"><%= e.order.number %></span> — <%= e.message %> <span class="hint"><%= time_ago_in_words(e.created_at) %> ago</span></li>
+      <% end %>
+    </ul>
+  </section>
+</div>

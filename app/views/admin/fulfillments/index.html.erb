@@ -1,0 +1,27 @@
+<% content_for :title, "Fulfillment queue" %>
+<h1>Fulfillment queue</h1>
+<p class="hint">Items waiting on you — manual-mode dropshippers (ThisNew / ArtsAdd / Yoycol until their partner APIs are connected) and in-house products. Place the order on the supplier's site, paste their order ID here, then add tracking from the order page when it ships.</p>
+
+<% if @items.any? %>
+  <table class="table">
+    <thead><tr><th>Order</th><th>Item</th><th>Qty</th><th>Supplier</th><th>Supplier order ID</th></tr></thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr>
+          <td><%= link_to item.order.number, admin_order_path(item.order), class: "mono" %></td>
+          <td><%= item.title %> <span class="hint mono"><%= item.sku %></span></td>
+          <td>×<%= item.quantity %></td>
+          <td><%= item.supplier&.name || "In-house" %></td>
+          <td>
+            <%= form_with url: admin_fulfillment_path(item), method: :patch, class: "searchbar" do |f| %>
+              <%= f.text_field "order_item[external_order_id]", placeholder: "e.g. TN-12345", class: "mono" %>
+              <%= f.submit "Mark submitted", class: "btn btn--sm" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty"><p>Queue is clear ✦</p></div>
+<% end %>

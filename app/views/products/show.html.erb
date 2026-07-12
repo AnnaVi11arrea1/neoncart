@@ -1,0 +1,60 @@
+<% content_for :title, "#{@product.title} · #{store_name}" %>
+<article class="product-page">
+  <div class="product-page__gallery">
+    <% urls = @product.all_image_urls %>
+    <% if urls.any? %>
+      <img class="product-page__main" src="<%= urls.first %>" alt="<%= @product.title %>">
+      <% if urls.size > 1 %>
+        <div class="product-page__thumbs">
+          <% urls.drop(1).first(5).each do |u| %>
+            <img src="<%= u %>" alt="" loading="lazy">
+          <% end %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="product-card__placeholder product-page__main">◈</div>
+    <% end %>
+  </div>
+
+  <div class="product-page__info">
+    <% if @product.category %><p class="eyebrow"><%= @product.category.name %></p><% end %>
+    <h1><%= @product.title %></h1>
+    <p class="product-page__price"><%= format_money(@product.price_cents) %></p>
+
+    <% if preview_mode? %>
+      <p class="hint">Preview mode: checkout is disabled until a database is configured.</p>
+    <% else %>
+      <%= form_with url: cart_items_path, method: :post, class: "buy-form" do |f| %>
+        <%= f.hidden_field :product_id, value: @product.id %>
+        <% if @variants.any? %>
+          <label class="field">
+            <span>Option</span>
+            <%= f.select :variant_id, @variants.map { |v| ["#{v.label} — #{format_money(v.price_cents_or_default)}", v.id] } %>
+          </label>
+        <% end %>
+        <label class="field field--qty">
+          <span>Qty</span>
+          <%= f.number_field :quantity, value: 1, min: 1, max: 99 %>
+        </label>
+        <%= f.submit "Add to cart", class: "btn btn--primary btn--lg" %>
+      <% end %>
+    <% end %>
+
+    <% if @product.description.present? %>
+      <div class="product-page__desc"><%= simple_format(strip_tags(@product.description)) %></div>
+    <% end %>
+
+    <% if @product.tags.any? %>
+      <p class="tag-row"><% @product.tags.each do |t| %><span class="tag"><%= t %></span><% end %></p>
+    <% end %>
+  </div>
+</article>
+
+<% if @related.any? %>
+  <section class="section">
+    <h2 class="section__title">Also glowing</h2>
+    <div class="product-grid">
+      <% @related.each do |product| %><%= render "shared/product_card", product: product %><% end %>
+    </div>
+  </section>
+<% end %>

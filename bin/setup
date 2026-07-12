@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args, exception: true)
+end
+
+FileUtils.chdir APP_ROOT do
+  puts "== Installing dependencies =="
+  system!("bundle check") || system!("bundle install")
+
+  puts "\n== Copying sample environment =="
+  unless File.exist?(".env")
+    FileUtils.cp ".env.example", ".env"
+    puts "Created .env from .env.example — fill in your keys!"
+  end
+
+  puts "\n== Installing GoodJob (background jobs) =="
+  system!("bin/rails g good_job:install") unless Dir.glob("db/migrate/*good_job*").any?
+
+  puts "\n== Preparing database =="
+  system!("bin/rails db:prepare")
+
+  puts "\n== Seeding =="
+  system!("bin/rails db:seed")
+
+  puts "\n== Done. Start with: bin/rails s =="
+end
