@@ -1,0 +1,37 @@
+<div class="board">
+  <div class="board-col">
+    <div class="board-col__head">
+      <h3>New <span class="board-col__sub">paid · place on ArtsAdd</span></h3>
+      <span class="board-col__count"><%= @board_new.size %></span>
+    </div>
+    <% if @board_new.any? %>
+      <%= render partial: "admin/dashboard/order_card", collection: @board_new, as: :order, locals: { col: "new" } %>
+    <% else %>
+      <p class="board-col--empty">Nothing waiting ✦</p>
+    <% end %>
+  </div>
+
+  <div class="board-col">
+    <div class="board-col__head">
+      <h3>Pending <span class="board-col__sub">placed · awaiting shipment</span></h3>
+      <span class="board-col__count"><%= @board_pending.size %></span>
+    </div>
+    <% if @board_pending.any? %>
+      <%= render partial: "admin/dashboard/order_card", collection: @board_pending, as: :order, locals: { col: "pending" } %>
+    <% else %>
+      <p class="board-col--empty">Nothing in progress</p>
+    <% end %>
+  </div>
+
+  <div class="board-col">
+    <div class="board-col__head">
+      <h3>Completed <span class="board-col__sub">shipped / delivered</span></h3>
+      <span class="board-col__count"><%= @board_completed.size %></span>
+    </div>
+    <% if @board_completed.any? %>
+      <%= render partial: "admin/dashboard/order_card", collection: @board_completed, as: :order, locals: { col: "completed" } %>
+    <% else %>
+      <p class="board-col--empty">No completed orders yet</p>
+    <% end %>
+  </div>
+</div>

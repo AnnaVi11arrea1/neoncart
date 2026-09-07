@@ -22,6 +22,14 @@ class Order < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :needing_tracking_sync, -> { where(status: %w[processing shipped]) }
 
+  # --- Fulfillment board columns (Admin dashboard) ----------------------
+  # NEW: paid, still has items you haven't placed with the supplier yet.
+  # PENDING: placed with the supplier, awaiting shipment.
+  # COMPLETED: shipped or delivered.
+  scope :board_new,       -> { where(status: %w[paid processing], id: OrderItem.awaiting_manual.select(:order_id)) }
+  scope :board_pending,   -> { where(status: %w[paid processing]).where.not(id: OrderItem.awaiting_manual.select(:order_id)) }
+  scope :board_completed, -> { where(status: %w[shipped delivered]) }
+
   # --- state transitions -----------------------------------------------
   # Every transition writes an audit event, emails the customer, and
   # fans out to partner webhooks. This is the automation backbone.

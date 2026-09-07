@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: { omniauth_callbacks: "users/omniauth_callbacks" }
 
   root "home#index"
 
@@ -44,6 +44,8 @@ Rails.application.routes.draw do
         post :resubmit
         post :cancel
         post :mark_shipped
+        post :mark_placed
+        post :ship
       end
       resources :shipments, only: :create
     end
@@ -55,10 +57,18 @@ Rails.application.routes.draw do
       member do
         post :sync
         post :test_connection
+        post :import
       end
     end
     resources :api_keys, only: %i[index create destroy]
     resources :webhook_endpoints, only: %i[index create update destroy]
+
+    # In-person sales via Stripe Terminal (card-present POS)
+    get  "terminal",                   to: "terminal#show"
+    post "terminal/connection_token",  to: "terminal#connection_token"
+    post "terminal/payment_intent",    to: "terminal#payment_intent"
+    post "terminal/capture",           to: "terminal#capture"
+
     get "docs", to: "docs#show"
   end
 

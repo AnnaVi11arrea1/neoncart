@@ -18,3 +18,27 @@
   <label class="check"><%= f.check_box :active %> <span>Active</span></label>
   <%= f.submit "Save supplier", class: "btn btn--primary" %>
 <% end %>
+
+<% if supplier.persisted? && supplier.adapter.to_s == "Dropshipping::ArtsAddAdapter" %>
+  <div class="stack panel">
+    <h2>Import / sync products from ArtsAdd</h2>
+    <p class="hint">
+      ArtsAdd has no pull API, so products are imported from your seller-center
+      export. In ArtsAdd → <strong>Seller Center → Products → Export</strong>,
+      download the <span class="mono">.xls</span> file and upload it here.
+      Re-upload a fresh export any time to <strong>pull in your changes</strong>:
+      existing products update in place, new ones are added as drafts to review,
+      and sizes you removed on ArtsAdd become unavailable.
+    </p>
+    <%= form_with url: import_admin_supplier_path(supplier), method: :post, multipart: true, class: "field-row" do |f| %>
+      <label class="field">
+        <span>ArtsAdd export file <em class="hint">(.xls)</em></span>
+        <%= f.file_field :file, accept: ".xls,.xml,application/xml,text/xml", required: true %>
+      </label>
+      <%= f.submit "Import / Sync now", class: "btn btn--primary" %>
+    <% end %>
+    <% if supplier.last_sync_log.present? %>
+      <p class="hint">Last import: <%= supplier.last_sync_log %></p>
+    <% end %>
+  </div>
+<% end %>

@@ -1,6 +1,6 @@
 module Admin
   class SuppliersController < BaseController
-    before_action :set_supplier, only: %i[edit update destroy sync test_connection]
+    before_action :set_supplier, only: %i[edit update destroy sync test_connection import]
 
     def index
       @suppliers = Supplier.order(:name)
@@ -34,6 +34,29 @@ module Admin
       redirect_to admin_suppliers_path, notice: "#{@supplier.name}: connection OK ✓"
     rescue Dropshipping::BaseAdapter::Error => e
       redirect_to admin_suppliers_path, alert: "#{@supplier.name}: #{e.message}"
+    end
+
+    # Upload a supplier product export (currently ArtsAdd's .xls) and upsert
+    # products. Re-uploading a fresh export pulls in changes.
+    def import
+      adapter = @supplier.adapter_instance
+      unless adapter.respond_to?(:import_file!)
+        return redirect_to edit_admin_supplier_path(@supplier),
+                           alert: "#{@supplier.name} doesn't support file import."
+      end
+
+      file = params[:file]
+      if file.blank?
+        return redirect_to edit_admin_supplier_path(@supplier), alert: "Choose an export file to import."
+      end
+
+      count = adapter.import_file!(file.tempfile)
+      @supplier.update!(last_synced_at: Time.current,
+                        last_sync_log: "OK — imported #{count} products from file #{Time.current.strftime('%b %-d, %H:%M')}")
+      redirect_to admin_suppliers_path,
+                  notice: "#{@supplier.name}: imported #{count} products. New items are drafts — review pricing and activate."
+    rescue Dropshipping::BaseAdapter::Error => e
+      redirect_to edit_admin_supplier_path(@supplier), alert: "Import failed: #{e.message}"
     end
 
     private

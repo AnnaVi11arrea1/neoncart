@@ -11,5 +11,8 @@
     <label class="field"><span>Confirm password</span><%= f.password_field :password_confirmation, autocomplete: "new-password" %></label>
     <%= f.submit "Create account", class: "btn btn--primary" %>
   <% end %>
+  <div class="oauth-divider"><span>or</span></div>
+  <%= button_to "Continue with Google", user_google_oauth2_omniauth_authorize_path,
+        data: { turbo: false }, class: "btn btn--oauth" %>
   <p class="hint">Already registered? <%= link_to "Sign in", new_session_path(resource_name) %></p>
 </div>

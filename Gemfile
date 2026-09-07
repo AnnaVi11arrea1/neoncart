@@ -14,6 +14,8 @@ gem "stimulus-rails"
 
 # Auth
 gem "devise", "~> 4.9"
+gem "omniauth-google-oauth2", "~> 1.1"   # "Continue with Google" for customers
+gem "omniauth-rails_csrf_protection", "~> 1.0" # required CSRF guard for OmniAuth 2
 
 # Payments
 gem "stripe", "~> 12.0"

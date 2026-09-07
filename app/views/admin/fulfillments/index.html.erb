@@ -1,27 +1,94 @@
 <% content_for :title, "Fulfillment queue" %>
-<h1>Fulfillment queue</h1>
-<p class="hint">Items waiting on you — manual-mode dropshippers (ThisNew / ArtsAdd / Yoycol until their partner APIs are connected) and in-house products. Place the order on the supplier's site, paste their order ID here, then add tracking from the order page when it ships.</p>
+<div class="page-head">
+  <h1>Fulfillment queue</h1>
+  <span class="hint"><%= @items.size %> item<%= "s" unless @items.size == 1 %> waiting</span>
+</div>
+<p class="hint">
+  Items to place with a supplier by hand — manual dropshippers (ArtsAdd / ThisNew / Yoycol) and
+  in-house products. For ArtsAdd: click <strong>Open on ArtsAdd</strong>, add the item to your cart,
+  copy the ship-to address into ArtsAdd checkout, then paste ArtsAdd's order number here and
+  <strong>Mark submitted</strong>. Add tracking later from the order page.
+</p>
 
 <% if @items.any? %>
-  <table class="table">
-    <thead><tr><th>Order</th><th>Item</th><th>Qty</th><th>Supplier</th><th>Supplier order ID</th></tr></thead>
-    <tbody>
-      <% @items.each do |item| %>
-        <tr>
-          <td><%= link_to item.order.number, admin_order_path(item.order), class: "mono" %></td>
-          <td><%= item.title %> <span class="hint mono"><%= item.sku %></span></td>
-          <td>×<%= item.quantity %></td>
-          <td><%= item.supplier&.name || "In-house" %></td>
-          <td>
-            <%= form_with url: admin_fulfillment_path(item), method: :patch, class: "searchbar" do |f| %>
-              <%= f.text_field "order_item[external_order_id]", placeholder: "e.g. TN-12345", class: "mono" %>
-              <%= f.submit "Mark submitted", class: "btn btn--sm" %>
+  <div class="ff-list">
+    <% @items.each do |item| %>
+      <% order = item.order %>
+      <% addr = order.shipping_address || {} %>
+      <% source_url = item.product&.metadata&.dig("source_url") %>
+      <div class="panel ff-card">
+        <div class="ff-card__head">
+          <div>
+            <%= link_to order.number, admin_order_path(order), class: "mono" %>
+            <span class="hint">· placed <%= order.placed_at&.strftime("%b %-d, %H:%M") || "—" %></span>
+          </div>
+          <span class="chip chip--paid"><%= item.supplier&.name || "In-house" %></span>
+        </div>
+
+        <div class="ff-card__grid">
+          <%# ---- what to order ---- %>
+          <div class="ff-item">
+            <div class="ff-item__title"><%= item.title %></div>
+            <div class="hint mono">
+              <%= "×#{item.quantity}" %><%= " · #{item.sku}" if item.sku.present? %>
+              <%= " · #{item.product.metadata['product_type']}" if item.product&.metadata&.dig("product_type").present? %>
+            </div>
+            <% if source_url.present? %>
+              <%= link_to "Open on ArtsAdd ↗", source_url, target: "_blank", rel: "noopener",
+                    class: "btn btn--sm btn--primary" %>
+            <% elsif item.supplier %>
+              <span class="hint">No product link stored — re-sync <%= item.supplier.name %> to add one.</span>
             <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+          </div>
+
+          <%# ---- where to ship ---- %>
+          <div class="ff-ship">
+            <div class="ff-ship__label">Ship to</div>
+            <% if shipping_address_text(addr).present? %>
+              <pre class="ff-address"><%= shipping_address_text(addr) %></pre>
+              <div class="btn-row">
+                <button type="button" class="btn btn--sm" data-controller="clipboard"
+                        data-action="clipboard#copy"
+                        data-clipboard-text="<%= shipping_address_text(addr) %>">Copy address</button>
+                <% if order.customer_email.present? %>
+                  <button type="button" class="btn btn--sm" data-controller="clipboard"
+                          data-action="clipboard#copy"
+                          data-clipboard-text="<%= order.customer_email %>">Copy email</button>
+                <% end %>
+              </div>
+            <% else %>
+              <p class="hint">No shipping address on this order (e.g. an in-person sale). Contact the
+                customer<%= " at #{order.customer_email}" if order.customer_email.present? %> for delivery details.</p>
+            <% end %>
+          </div>
+        </div>
+
+        <%# ---- mark submitted ---- %>
+        <%= form_with url: admin_fulfillment_path(item), method: :patch, class: "ff-submit" do |f| %>
+          <%= f.text_field "order_item[external_order_id]",
+                placeholder: "ArtsAdd order number", class: "mono" %>
+          <%= f.submit "Mark submitted", class: "btn btn--sm" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 <% else %>
   <div class="empty"><p>Queue is clear ✦</p></div>
 <% end %>
+
+<style>
+  .ff-list { display: flex; flex-direction: column; gap: .9rem; }
+  .ff-card__head { display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: .6rem; margin-bottom: .6rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .ff-card__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 800px) { .ff-card__grid { grid-template-columns: 1fr; } }
+  .ff-item__title { font-weight: 600; margin-bottom: .2rem; }
+  .ff-item .btn { margin-top: .5rem; }
+  .ff-ship__label { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted, #8a8f98); margin-bottom: .3rem; }
+  .ff-address { white-space: pre-wrap; font-family: inherit; margin: 0 0 .5rem;
+    padding: .5rem .6rem; border: 1px dashed rgba(255,255,255,.15); border-radius: 6px; line-height: 1.5; }
+  .ff-submit { display: flex; gap: .5rem; margin-top: .9rem; padding-top: .6rem;
+    border-top: 1px solid rgba(255,255,255,.08); }
+  .ff-submit input { flex: 1; max-width: 20rem; }
+</style>

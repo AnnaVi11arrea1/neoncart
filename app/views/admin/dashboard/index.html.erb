@@ -3,48 +3,46 @@
 
 <div class="stat-grid">
   <div class="stat"><p class="stat__label">Revenue · 30 days</p><p class="stat__value mono"><%= format_money(@revenue_30d_cents) %></p></div>
+  <div class="stat"><p class="stat__label">New · needs fulfillment</p><p class="stat__value mono"><%= @board_new.size %></p></div>
+  <div class="stat"><p class="stat__label">Awaiting manual items</p><p class="stat__value mono"><%= @awaiting_manual %></p></div>
   <div class="stat"><p class="stat__label">Open tickets</p><p class="stat__value mono"><%= @open_tickets %></p></div>
-  <div class="stat"><p class="stat__label">Awaiting manual fulfillment</p><p class="stat__value mono"><%= @awaiting_manual %></p></div>
-  <% %w[paid processing shipped].each do |s| %>
-    <div class="stat"><p class="stat__label">Orders · <%= s %></p><p class="stat__value mono"><%= @orders_by_status.fetch(s, 0) %></p></div>
-  <% end %>
 </div>
 
-<div class="order-grid">
-  <section class="panel">
-    <h2>Recent orders</h2>
-    <table class="table">
-      <tbody>
-        <% @recent_orders.each do |o| %>
-          <tr>
-            <td><%= link_to o.number, admin_order_path(o), class: "mono" %></td>
-            <td><%= o.email %></td>
-            <td class="mono"><%= format_money(o.total_cents) %></td>
-            <td><%= status_chip(o.status) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="panel">
-    <h2>Suppliers</h2>
-    <table class="table">
-      <tbody>
-        <% @suppliers.each do |s| %>
-          <tr>
-            <td><%= link_to s.name, edit_admin_supplier_path(s) %></td>
-            <td><%= s.fulfillment_mode %></td>
-            <td class="hint"><%= s.last_synced_at ? "synced #{time_ago_in_words(s.last_synced_at)} ago" : "never synced" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <h2>Activity</h2>
-    <ul class="feed">
-      <% @recent_events.each do |e| %>
-        <li><span class="mono"><%= e.order.number %></span> — <%= e.message %> <span class="hint"><%= time_ago_in_words(e.created_at) %> ago</span></li>
-      <% end %>
-    </ul>
-  </section>
+<div class="page-head">
+  <h2>Order board</h2>
+  <span class="hint">Move orders left → right as you fulfill them</span>
 </div>
+
+<div id="order-board">
+  <%= render "admin/dashboard/board" %>
+</div>
+
+<section class="panel" style="margin-top:1rem">
+  <h2>Recent activity</h2>
+  <ul class="feed">
+    <% @recent_events.each do |e| %>
+      <li><span class="mono"><%= link_to e.order.number, admin_order_path(e.order) %></span> — <%= e.message %> <span class="hint"><%= time_ago_in_words(e.created_at) %> ago</span></li>
+    <% end %>
+  </ul>
+</section>
+
+<style>
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: start; }
+  @media (max-width: 950px) { .board { grid-template-columns: 1fr; } }
+  .board-col { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px; padding: .75rem; }
+  .board-col__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .6rem; }
+  .board-col__head h3 { margin: 0; font-size: 1rem; }
+  .board-col__count { font-size: .8rem; color: var(--muted, #8a8f98); }
+  .board-col__sub { display:block; font-size:.72rem; color: var(--muted,#8a8f98); font-weight:400; }
+  .ocard { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.1); border-radius: 8px;
+    padding: .6rem .7rem; margin-bottom: .6rem; }
+  .ocard__top { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+  .ocard__meta { font-size: .8rem; color: var(--muted, #8a8f98); margin: .2rem 0 .4rem; }
+  .ocard__ship { font-size: .78rem; margin-bottom: .5rem; }
+  .ocard form { margin-top: .4rem; }
+  .ocard .field-inline { display: flex; gap: .35rem; flex-wrap: wrap; }
+  .ocard .field-inline input { flex: 1; min-width: 6rem; font-size: .85rem; padding: .3rem .4rem; }
+  .board-col--empty { color: var(--muted, #8a8f98); font-size: .85rem; padding: .5rem; }
+  .ocard__actions { display:flex; gap:.4rem; align-items:center; margin-top:.4rem; flex-wrap: wrap; }
+</style>

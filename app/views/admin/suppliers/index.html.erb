@@ -14,11 +14,15 @@
         <td><%= status_chip(s.fulfillment_mode) %></td>
         <td class="hint"><%= s.last_sync_log || "—" %></td>
         <td class="btn-row">
-          <%= button_to "Test connection", test_connection_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
-          <%= button_to "Sync now", sync_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
+          <% if s.adapter.to_s == "Dropshipping::ArtsAddAdapter" %>
+            <%= link_to "Import / Sync", edit_admin_supplier_path(s), class: "btn btn--sm" %>
+          <% else %>
+            <%= button_to "Test connection", test_connection_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
+            <%= button_to "Sync now", sync_admin_supplier_path(s), method: :post, class: "btn btn--sm" %>
+          <% end %>
         </td>
       </tr>
     <% end %>
   </tbody>
 </table>
-<p class="hint"><strong>Printify</strong> works out of the box with a Personal Access Token. <strong>ThisNew / ArtsAdd / Yoycol</strong> gate their APIs behind partner approval — run them in manual mode until you have credentials, then switch to auto and configure the endpoints in Settings JSON (see the adapter comments in <span class="mono">app/services/dropshipping/</span>).</p>
+<p class="hint"><strong>Printify</strong> works out of the box with a Personal Access Token. <strong>ArtsAdd</strong> has no pull API — click <strong>Import / Sync</strong> and upload the <span class="mono">.xls</span> export from your ArtsAdd Seller Center; re-upload any time to pull in changes. <strong>ThisNew / Yoycol</strong> gate their APIs behind partner approval — run them in manual mode until you have credentials, then configure the endpoints in Settings JSON (see the adapter comments in <span class="mono">app/services/dropshipping/</span>).</p>

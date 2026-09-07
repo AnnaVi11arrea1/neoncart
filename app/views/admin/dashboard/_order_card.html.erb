@@ -1,0 +1,55 @@
+<% a = order.shipping_address || {} %>
+<div class="ocard" id="<%= dom_id(order) %>">
+  <div class="ocard__top">
+    <%= link_to order.number, admin_order_path(order), class: "mono" %>
+    <strong class="mono"><%= format_money(order.total_cents) %></strong>
+  </div>
+  <div class="ocard__meta">
+    <%= order.customer_name %> · <%= order.email %><br>
+    <%= pluralize(order.order_items.sum(&:quantity), "item") %> ·
+    <%= order.placed_at&.strftime("%b %-d, %H:%M") || "—" %>
+  </div>
+
+  <% if a["city"].present? || a["country"].present? %>
+    <div class="ocard__ship hint">📦 <%= [a["city"], a["state"], a["country"]].compact_blank.join(", ") %></div>
+  <% elsif col != "completed" %>
+    <div class="ocard__ship" style="color:#e0a">⚠ no shipping address</div>
+  <% end %>
+
+  <% case col %>
+  <% when "new" %>
+    <%= form_with url: mark_placed_admin_order_path(order), method: :post do %>
+      <div class="field-inline">
+        <%= text_field_tag :external_order_id, nil, placeholder: "ArtsAdd order # (optional)", class: "mono" %>
+        <%= submit_tag "Mark placed →", class: "btn btn--sm btn--primary" %>
+      </div>
+    <% end %>
+    <div class="ocard__actions">
+      <%= link_to "Fulfillment", admin_fulfillments_path, class: "btn btn--ghost btn--sm" %>
+      <%= button_to "Cancel", cancel_admin_order_path(order), method: :post,
+            class: "btn btn--ghost btn--sm", data: { turbo: false, turbo_confirm: "Cancel #{order.number}?" } %>
+    </div>
+
+  <% when "pending" %>
+    <%= form_with url: ship_admin_order_path(order), method: :post do %>
+      <div class="field-inline">
+        <%= text_field_tag :carrier, nil, placeholder: "Carrier" %>
+        <%= text_field_tag :tracking_number, nil, placeholder: "Tracking #", class: "mono" %>
+      </div>
+      <div class="ocard__actions">
+        <%= submit_tag "Mark shipped →", class: "btn btn--sm btn--primary" %>
+        <%= button_to "Cancel", cancel_admin_order_path(order), method: :post,
+              class: "btn btn--ghost btn--sm", data: { turbo: false, turbo_confirm: "Cancel #{order.number}?" } %>
+      </div>
+    <% end %>
+
+  <% when "completed" %>
+    <div class="ocard__actions">
+      <%= status_chip(order.status) %>
+      <% order.shipments.each do |s| %>
+        <%= link_to "#{s.display_carrier} #{s.tracking_number}", s.tracking_url.to_s, target: "_blank", class: "mono hint" %>
+      <% end %>
+      <%= link_to "View", admin_order_path(order), class: "btn btn--ghost btn--sm" %>
+    </div>
+  <% end %>
+</div>

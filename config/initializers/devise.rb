@@ -15,4 +15,14 @@ Devise.setup do |config|
   config.sign_out_via = :delete
   config.responder.error_status = :unprocessable_entity
   config.responder.redirect_status = :see_other
+
+  # ==> OmniAuth — "Continue with Google"
+  # Create OAuth credentials at https://console.cloud.google.com/apis/credentials
+  # (OAuth client ID → Web application). Authorized redirect URI must be:
+  #   <your-host>/users/auth/google_oauth2/callback
+  # Then set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in .env.
+  config.omniauth :google_oauth2,
+                  ENV["GOOGLE_CLIENT_ID"],
+                  ENV["GOOGLE_CLIENT_SECRET"],
+                  { scope: "email,profile", prompt: "select_account" }
 end

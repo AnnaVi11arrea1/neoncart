@@ -1,0 +1,151 @@
+<% content_for :title, "Terminal (in-person sales)" %>
+
+<div class="page-head">
+  <h1>Terminal · in-person sales</h1>
+  <span class="hint">Card-present checkout via Stripe Terminal</span>
+</div>
+
+<div class="pos" data-controller="terminal">
+  <div class="pos-grid">
+    <%# ---- Left: catalog ------------------------------------------------ %>
+    <section class="panel">
+      <h2>Products</h2>
+      <input type="search" class="pos-search" placeholder="Filter products…"
+             data-action="input->terminal#filterCatalog">
+      <div class="pos-catalog">
+        <% if @products.empty? %>
+          <p class="hint">No active products. Activate some in <%= link_to "Products", admin_products_path %>.</p>
+        <% end %>
+        <% @products.each do |product| %>
+          <div class="pos-product" data-pos-product data-slug="<%= product.slug %>"
+               data-title="<%= product.title %>" data-price="<%= product.price_cents %>">
+            <div class="pos-product__main">
+              <span class="pos-product__title"><%= product.title %></span>
+              <% if product.variants.size > 1 %>
+                <select data-pos-variant class="pos-product__variant">
+                  <% product.variants.each do |v| %>
+                    <option value="<%= v.id %>" data-price="<%= v.price_cents || product.price_cents %>"
+                            data-title="<%= v.title %>">
+                      <%= v.title %> — <%= format_money(v.price_cents || product.price_cents) %>
+                    </option>
+                  <% end %>
+                </select>
+              <% else %>
+                <% v = product.variants.first %>
+                <span class="pos-product__price mono"><%= format_money(v&.price_cents || product.price_cents) %></span>
+                <% if v %>
+                  <select data-pos-variant hidden>
+                    <option value="<%= v.id %>" data-price="<%= v.price_cents || product.price_cents %>" data-title="<%= v.title %>"></option>
+                  </select>
+                <% end %>
+              <% end %>
+            </div>
+            <div class="pos-product__add">
+              <input type="number" min="1" value="1" data-pos-qty class="pos-qty" aria-label="Quantity">
+              <button type="button" class="btn btn--sm" data-action="terminal#addItem">Add</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <%# ---- Right: sale + reader ---------------------------------------- %>
+    <section class="stack">
+      <div class="panel">
+        <h2>Card reader</h2>
+        <p><span data-terminal-target="readerStatus" class="chip chip--pending">Not connected</span></p>
+        <label class="check">
+          <input type="checkbox" data-terminal-target="simulated" checked>
+          <span>Use simulated reader (for testing — no hardware needed)</span>
+        </label>
+        <%= button_tag "Connect reader", type: "button", class: "btn",
+              data: { terminal_target: "connectButton", action: "terminal#connectReader" } %>
+      </div>
+
+      <div class="panel">
+        <h2>Current sale</h2>
+        <div data-terminal-target="cart" class="pos-cart"></div>
+
+        <div class="pos-custom">
+          <label class="field">
+            <span>Custom amount <em class="hint">(optional, USD)</em></span>
+            <input type="number" step="0.01" min="0" placeholder="0.00"
+                   data-terminal-target="customAmount" data-action="input->terminal#renderCart">
+          </label>
+          <label class="field">
+            <span>Custom label</span>
+            <input type="text" placeholder="In-store item" data-terminal-target="customLabel">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Customer email <em class="hint">(optional — sends a receipt)</em></span>
+          <input type="email" placeholder="customer@example.com" data-terminal-target="email">
+        </label>
+
+        <details class="pos-ship">
+          <summary>Ship to customer <span class="hint">(required for print-on-demand items)</span></summary>
+          <div class="pos-ship__fields" data-terminal-target="shipping">
+            <input name="name" placeholder="Full name">
+            <input name="phone" placeholder="Phone">
+            <input name="line1" placeholder="Address line 1">
+            <input name="line2" placeholder="Address line 2">
+            <input name="city" placeholder="City">
+            <input name="state" placeholder="State/Region">
+            <input name="postal_code" placeholder="ZIP/Postal">
+            <input name="country" placeholder="Country (e.g. US)" value="US">
+          </div>
+        </details>
+
+        <div class="pos-total">
+          <span>Total</span>
+          <strong class="mono" data-terminal-target="total">$0.00</strong>
+        </div>
+
+        <%= button_tag "Charge card", type: "button", class: "btn btn--primary btn--lg",
+              disabled: true, data: { terminal_target: "chargeButton", action: "terminal#charge" } %>
+
+        <div class="flash flash--notice" data-terminal-target="receipt" hidden></div>
+      </div>
+
+      <div class="panel">
+        <h2>Activity</h2>
+        <div class="pos-log mono" data-terminal-target="log"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="hint">
+  Test mode: connect the <strong>simulated reader</strong>, add items, and Charge — the simulated
+  reader approves with a test card automatically. Print-on-demand items (ArtsAdd) require a
+  <strong>ship-to address</strong> and land in the <%= link_to "dashboard", admin_root_path %>
+  <strong>New</strong> column to fulfill; a custom-amount sale with no address is a counter sale
+  (marked fulfilled). To take payments on real hardware, register a Stripe reader (WisePOS E /
+  Stripe Reader) and uncheck "simulated".
+</p>
+
+<style>
+  .pos-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 900px) { .pos-grid { grid-template-columns: 1fr; } }
+  .pos-search { width: 100%; margin-bottom: .75rem; }
+  .pos-catalog { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: .4rem; }
+  .pos-product { display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+    padding: .5rem .6rem; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; }
+  .pos-product__main { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; min-width: 0; }
+  .pos-product__title { font-weight: 600; }
+  .pos-product__add { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+  .pos-qty { width: 3.5rem; }
+  .pos-line { display: grid; grid-template-columns: 1fr auto auto; gap: .5rem; align-items: center;
+    padding: .35rem 0; border-bottom: 1px dashed rgba(255,255,255,.1); }
+  .pos-cart { margin-bottom: .75rem; }
+  .pos-custom { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .pos-total { display: flex; justify-content: space-between; align-items: baseline;
+    margin: .9rem 0; font-size: 1.25rem; }
+  .btn--lg { width: 100%; padding: .8rem; font-size: 1.05rem; }
+  .pos-log { max-height: 12rem; overflow-y: auto; font-size: .8rem; line-height: 1.6; }
+  .pos-ship { margin: .6rem 0; }
+  .pos-ship summary { cursor: pointer; font-size: .9rem; }
+  .pos-ship__fields { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-top: .5rem; }
+  .pos-ship__fields input { width: 100%; }
+</style>
