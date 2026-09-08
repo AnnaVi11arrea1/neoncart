@@ -35,6 +35,17 @@
         <span>ArtsAdd export file <em class="hint">(.xls)</em></span>
         <%= f.file_field :file, accept: ".xls,.xml,application/xml,text/xml", required: true %>
       </label>
+      <label class="field">
+        <span>
+          <%= check_box_tag :activate_all, "1", true %>
+          Activate all listings after import
+        </span>
+        <em class="hint">
+          Puts every non-archived product live and every size back in stock,
+          including ArtsAdd items still in <strong>Saved</strong> status, which
+          otherwise import as sold out. Untick to review new items as drafts.
+        </em>
+      </label>
       <%= f.submit "Import / Sync now", class: "btn btn--primary" %>
     <% end %>
     <% if supplier.last_sync_log.present? %>

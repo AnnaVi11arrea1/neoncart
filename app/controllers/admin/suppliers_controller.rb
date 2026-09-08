@@ -53,8 +53,16 @@ module Admin
       count = adapter.import_file!(file.tempfile)
       @supplier.update!(last_synced_at: Time.current,
                         last_sync_log: "OK — imported #{count} products from file #{Time.current.strftime('%b %-d, %H:%M')}")
-      redirect_to admin_suppliers_path,
-                  notice: "#{@supplier.name}: imported #{count} products. New items are drafts — review pricing and activate."
+
+      notice = "#{@supplier.name}: imported #{count} products."
+      if ActiveModel::Type::Boolean.new.cast(params[:activate_all])
+        activated = Catalog::ActivateAll.call
+        notice += " Put #{activated[:products]} products live and made #{activated[:variants]} variants available."
+      else
+        notice += " New items are drafts — review pricing and activate."
+      end
+
+      redirect_to admin_suppliers_path, notice: notice
     rescue Dropshipping::BaseAdapter::Error => e
       redirect_to edit_admin_supplier_path(@supplier), alert: "Import failed: #{e.message}"
     end
