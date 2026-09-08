@@ -1,4 +1,36 @@
 <% content_for :title, "#{@product.title} · #{store_name}" %>
+<% content_for :description, @product.description.presence || "#{@product.title} — UV-reactive artwork by Anna Villarreal, printed to order and shipped from an independent studio." %>
+<% content_for :og_type, "product" %>
+<% if (og = @product.all_image_urls.first).present? %><% content_for :og_image, absolute_image_url(og) %><% end %>
+<% content_for :structured_data do %>
+  <%= json_ld({
+    "@context" => "https://schema.org",
+    "@type" => "Product",
+    "name" => @product.title,
+    "description" => page_description,
+    "image" => @product.all_image_urls.first(5).map { |u| absolute_image_url(u) },
+    "sku" => @product.external_id,
+    "brand" => { "@type" => "Brand", "name" => store_name },
+    "category" => @product.category&.name,
+    "offers" => {
+      "@type" => "Offer",
+      "url" => product_url(@product),
+      "priceCurrency" => @product.currency.to_s.upcase,
+      "price" => (@product.price_cents / 100.0).to_s,
+      "availability" => @sold_out ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      "itemCondition" => "https://schema.org/NewCondition",
+      "seller" => { "@type" => "Organization", "name" => store_name }
+    }
+  }.compact) %>
+  <%= json_ld({
+    "@context" => "https://schema.org",
+    "@type" => "BreadcrumbList",
+    "itemListElement" => [
+      { "@type" => "ListItem", "position" => 1, "name" => "Shop", "item" => products_url },
+      { "@type" => "ListItem", "position" => 2, "name" => @product.title, "item" => product_url(@product) }
+    ]
+  }) %>
+<% end %>
 <article class="product-page">
   <div class="product-page__gallery">
     <% urls = @product.all_image_urls %>
@@ -24,19 +56,24 @@
     <% if preview_mode? %>
       <p class="hint">Preview mode: checkout is disabled until a database is configured.</p>
     <% else %>
-      <%= form_with url: cart_items_path, method: :post, class: "buy-form" do |f| %>
-        <%= f.hidden_field :product_id, value: @product.id %>
-        <% if @variants.any? %>
-          <label class="field">
-            <span>Option</span>
-            <%= f.select :variant_id, @variants.map { |v| ["#{v.label} — #{format_money(v.price_cents_or_default)}", v.id] } %>
+      <% if @sold_out %>
+        <p class="sold-out">Sold out</p>
+        <p class="hint">This one is between print runs — check back soon.</p>
+      <% else %>
+        <%= form_with url: cart_items_path, method: :post, class: "buy-form" do |f| %>
+          <%= f.hidden_field :product_id, value: @product.id %>
+          <% if @variants.any? %>
+            <label class="field">
+              <span><%= variant_option_label(@variants) %></span>
+              <%= f.select :variant_id, @variants.map { |v| ["#{v.label} — #{format_money(v.price_cents_or_default)}", v.id] } %>
+            </label>
+          <% end %>
+          <label class="field field--qty">
+            <span>Qty</span>
+            <%= f.number_field :quantity, value: 1, min: 1, max: 99 %>
           </label>
+          <%= f.submit "Add to cart", class: "btn btn--primary btn--lg" %>
         <% end %>
-        <label class="field field--qty">
-          <span>Qty</span>
-          <%= f.number_field :quantity, value: 1, min: 1, max: 99 %>
-        </label>
-        <%= f.submit "Add to cart", class: "btn btn--primary btn--lg" %>
       <% end %>
     <% end %>
 

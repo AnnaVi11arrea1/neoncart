@@ -1,0 +1,4 @@
+<% content_for :title, @painting.title %>
+<h1><%= @painting.title %></h1>
+<p class="hint"><%= link_to "View in gallery →", painting_path(@painting) %></p>
+<section class="panel"><%= render "form", painting: @painting %></section>

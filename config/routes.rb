@@ -4,6 +4,12 @@ Rails.application.routes.draw do
   root "home#index"
 
   resources :products, only: %i[index show], param: :slug
+
+  get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
+
+  # Painting gallery (public). Admin uploads live under /admin/paintings.
+  get "gallery",       to: "gallery#index", as: :gallery
+  get "gallery/:slug", to: "gallery#show",  as: :painting
   resource :cart, only: :show
   resources :cart_items, only: %i[create update destroy]
   resource :checkout, only: :create
@@ -60,6 +66,7 @@ Rails.application.routes.draw do
         post :import
       end
     end
+    resources :paintings, param: :slug
     resources :api_keys, only: %i[index create destroy]
     resources :webhook_endpoints, only: %i[index create update destroy]
 

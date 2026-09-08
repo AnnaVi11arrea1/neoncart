@@ -37,6 +37,10 @@ gem "image_processing", "~> 1.12"
 
 gem "bootsnap", require: false
 
+# Error monitoring
+gem "sentry-ruby"
+gem "sentry-rails"
+
 group :development, :test do
   gem "dotenv-rails"
   gem "debug", platforms: %i[mri]

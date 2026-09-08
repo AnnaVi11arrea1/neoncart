@@ -1,7 +1,34 @@
+<% content_for :title, "#{store_name} · UV-reactive wearable art by Anna Villarreal" %>
+<% content_for :description, "Original blacklight-reactive artwork by independent artist Anna Villarreal, printed on apparel, board shorts, and prints. Every design is painted, processed, and shipped by the artist." %>
+<% content_for :structured_data do %>
+  <%= json_ld({
+    "@context" => "https://schema.org",
+    "@type" => "Store",
+    "name" => store_name,
+    "description" => page_description,
+    "url" => root_url,
+    "image" => "#{request.base_url}/apple-touch-icon.png",
+    "founder" => { "@type" => "Person", "name" => "Anna Villarreal" },
+    "email" => Rails.configuration.x.store_email,
+    "currenciesAccepted" => "USD",
+    "paymentAccepted" => "Credit Card, Apple Pay, Google Pay"
+  }) %>
+  <%= json_ld({
+    "@context" => "https://schema.org",
+    "@type" => "WebSite",
+    "name" => store_name,
+    "url" => root_url,
+    "potentialAction" => {
+      "@type" => "SearchAction",
+      "target" => { "@type" => "EntryPoint", "urlTemplate" => "#{products_url}?q={search_term_string}" },
+      "query-input" => "required name=search_term_string"
+    }
+  }) %>
+<% end %>
 <section class="hero">
   <p class="hero__eyebrow">UV-reactive art · printed on demand · shipped worldwide</p>
-  <h1 class="hero__title">Made to glow<br>under blacklight.</h1>
-  <p class="hero__sub">Original fluorescent artwork on apparel, prints, and gear. Flip the lights off and it comes alive.</p>
+  <h1 class="hero__title">Wearable art<br>by Anna Villarreal.</h1>
+  <p class="hero__sub">Thank you for visiting the Ever Fluorescent Online store. Each design is processed and managed by me and this online store I built. Thank you for supporting an independent artist. &lt;3</p>
   <div class="hero__actions">
     <%= link_to "Shop the collection", products_path, class: "btn btn--primary btn--lg" %>
     <%= link_to "Track an order", order_lookup_path, class: "btn btn--ghost btn--lg" %>

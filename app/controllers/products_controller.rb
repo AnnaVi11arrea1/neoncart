@@ -54,18 +54,23 @@ class ProductsController < ApplicationController
       raise ActiveRecord::RecordNotFound unless @product
 
       @variants = []
+      @sold_out = false
       @related = preview_products.reject { |p| p.slug == @product.slug }.first(4)
       return
     end
 
     @product = Product.active.find_by!(slug: params[:slug])
     @variants = @product.variants.available
+    # A product whose variants all came back unavailable from the supplier has
+    # nothing to pick from — sell it and the order arrives with no size.
+    @sold_out = @variants.empty? && @product.variants.exists?
     @related = Product.storefront.where(category_id: @product.category_id).where.not(id: @product.id).limit(4)
   rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
     @product = preview_products.find { |p| p.slug == params[:slug] }
     raise ActiveRecord::RecordNotFound unless @product
 
     @variants = []
+    @sold_out = false
     @related = preview_products.reject { |p| p.slug == @product.slug }.first(4)
     flash.now[:alert] = "Database unavailable. Showing preview data."
   end

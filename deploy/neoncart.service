@@ -1,7 +1,10 @@
 # /etc/systemd/system/neoncart.service — Puma web server
 [Unit]
 Description=Neoncart (Puma)
-After=network.target
+# The database lives on Neon, so the network must actually be up — not merely
+# configured — before Puma boots, or the first connection fails at startup.
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple

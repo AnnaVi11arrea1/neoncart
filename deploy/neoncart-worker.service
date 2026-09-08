@@ -1,8 +1,10 @@
 # /etc/systemd/system/neoncart-worker.service — GoodJob worker + cron
 # Runs order submission, tracking sync, product sync, emails, webhooks.
+# REQUIRED: without it, paid orders are never submitted and no email is sent.
 [Unit]
 Description=Neoncart worker (GoodJob)
-After=network.target
+After=network-online.target neoncart.service
+Wants=network-online.target
 
 [Service]
 Type=simple

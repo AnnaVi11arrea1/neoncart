@@ -192,6 +192,7 @@ fieldset.field { border: 1px solid var(--border); border-radius: var(--radius-sm
 .product-page__thumbs img { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; }
 .product-page__info h1 { font-size: 32px; margin: 0 0 12px; }
 .product-page__price { font-family: "JetBrains Mono", monospace; font-size: 26px; color: var(--lume); margin: 0 0 24px; }
+.sold-out { display: inline-block; border: 1px solid var(--border-bright); border-radius: var(--radius-sm); padding: 10px 18px; margin: 0 0 8px; color: var(--muted); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; }
 .buy-form { display: flex; flex-direction: column; gap: 16px; max-width: 340px; margin: 0 0 28px; }
 .product-page__desc { color: #cfc7e6; margin: 20px 0; }
 .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 0; }
@@ -250,6 +251,30 @@ fieldset.field { border: 1px solid var(--border); border-radius: var(--radius-sm
 .site-footer { border-top: 1px solid var(--border); margin-top: 60px; padding: 28px 0; }
 .site-footer__row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 13px; }
 .site-footer__links a { color: var(--muted); }
+.site-footer__social { display: flex; align-items: center; gap: 14px; list-style: none; margin: 0; padding: 0; }
+.site-footer__social a {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--muted);
+  transition: color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.site-footer__social svg { width: 17px; height: 17px; display: block; }
+.site-footer__social a:hover,
+.site-footer__social a:focus-visible {
+  color: var(--cyan);
+  border-color: var(--border-bright);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer__social a { transition: none; }
+  .site-footer__social a:hover,
+  .site-footer__social a:focus-visible { transform: none; }
+}
 
 /* ---------- Admin ---------- */
 .admin-body { background: var(--bg); }
@@ -327,3 +352,65 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
   height: 1px;
   background: rgba(255,255,255,.15);
 }
+
+/* ============================================================
+   Painting gallery
+   ============================================================ */
+.gallery__intro { max-width: 60ch; }
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+  margin: 26px 0 40px;
+}
+.gallery-grid--compact { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+
+.gallery-card {
+  display: block;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  color: var(--ink);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.gallery-card:hover {
+  text-decoration: none;
+  border-color: var(--uv-violet);
+  box-shadow: var(--glow-violet);
+  transform: translateY(-2px);
+}
+.gallery-card__frame { margin: 0; background: var(--bg-sunken); line-height: 0; }
+.gallery-card__img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4 / 5; }
+.gallery-card__body { padding: 12px 14px 14px; }
+.gallery-card__title { font-size: 15px; margin: 0 0 2px; }
+
+/* Single painting */
+.painting {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin: 18px 0 40px;
+}
+.painting__frame {
+  margin: 0;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  line-height: 0;
+}
+.painting__img { width: 100%; height: auto; border-radius: var(--radius-sm); }
+.painting__title { font-size: 28px; margin: 0 0 6px; }
+.painting__caption { color: var(--cyan); font-size: 13px; margin: 0 0 16px; }
+.painting__desc { color: var(--ink); }
+
+@media (max-width: 760px) {
+  .painting { grid-template-columns: 1fr; gap: 18px; }
+}
+
+/* Admin thumbnails */
+.admin-thumb img { max-width: 260px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.admin-thumb__sm { width: 54px; height: 54px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }

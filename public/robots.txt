@@ -1,0 +1,15 @@
+# Ever Fluorescent — www.everfluorescent.com
+User-agent: *
+Allow: /
+
+# Nothing here is useful to a crawler, and several are per-session.
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /track
+Disallow: /orders
+Disallow: /tickets
+Disallow: /users
+Disallow: /api/
+
+Sitemap: https://www.everfluorescent.com/sitemap.xml

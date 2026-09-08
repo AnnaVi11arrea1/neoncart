@@ -35,7 +35,8 @@
     <div class="cart__summary">
       <p class="cart__subtotal">Subtotal <strong class="mono"><%= format_money(@cart.subtotal_cents) %></strong></p>
       <p class="hint">Shipping and tax calculated at checkout. Pay by card, Google Pay, or Apple Pay.</p>
-      <%= button_to "Checkout →", checkout_path, method: :post, class: "btn btn--primary btn--lg btn--wide" %>
+      <%= button_to "Checkout →", checkout_path, method: :post,
+            data: { turbo: false }, class: "btn btn--primary btn--lg btn--wide" %>
     </div>
   </div>
 <% end %>

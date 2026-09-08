@@ -4,6 +4,7 @@
     <title><%= content_for(:title) || store_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="dark">
+    <%= render "shared/seo" %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <link rel="preconnect" href="https://fonts.googleapis.com">

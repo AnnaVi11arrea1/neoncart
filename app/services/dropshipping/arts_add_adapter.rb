@@ -17,6 +17,13 @@ module Dropshipping
   # so re-syncing to pull ArtsAdd changes re-prices consistently instead of
   # clobbering your retail prices with cost. Override the multiplier per
   # supplier via settings JSON, e.g. {"markup": 2.5}. Default 3.0.
+  #
+  # The multiplier can be TIERED by cost, so cheap items carry a fatter margin
+  # than expensive ones (a $7 tee at 3.5x still reads as a fair price; a $34
+  # hoodie at 3.5x does not). Set all three keys to enable it:
+  #   {"markup": 3.5, "markup_above": 2.5, "tier_threshold_cents": 1333}
+  # meaning: cost under $13.33 -> 3.5x, cost at or above it -> 2.5x. With
+  # markup_above unset the single "markup" applies to everything.
   DEFAULT_MARKUP = 3.0
 
   class ArtsAddAdapter < BaseAdapter
@@ -26,7 +33,9 @@ module Dropshipping
       products = ArtsAddSpreadsheet.parse(io_or_path)
       raise Error, "No products found — is this an ArtsAdd product export (.xls)?" if products.empty?
 
-      markup = (supplier.settings["markup"].presence || DEFAULT_MARKUP).to_f
+      low        = (supplier.settings["markup"].presence || DEFAULT_MARKUP).to_f
+      high       = supplier.settings["markup_above"].presence&.to_f
+      threshold  = supplier.settings["tier_threshold_cents"].presence&.to_i
 
       products.each do |attrs|
         # ArtsAdd-specific fields go on product.metadata (upsert_product!
@@ -40,15 +49,24 @@ module Dropshipping
         }.compact
 
         # Cost -> retail markup, applied to the product and every variant.
-        attrs[:price_cents] = retail_cents(cost_cents, markup)
+        attrs[:price_cents] = retail_cents(cost_cents, markup_for(cost_cents, low, high, threshold))
         attrs[:variants] = Array(attrs[:variants]).map do |v|
-          v.merge(price_cents: retail_cents(v[:price_cents].to_i, markup))
+          vc = v[:price_cents].to_i
+          v.merge(price_cents: retail_cents(vc, markup_for(vc, low, high, threshold)))
         end
 
         product = upsert_product!(**attrs)
         product.update!(metadata: product.metadata.merge(meta)) unless product.metadata.slice(*meta.keys) == meta
       end
       products.size
+    end
+
+    # Which multiplier applies to a given cost. Tiering is active only when
+    # both markup_above and tier_threshold_cents are configured.
+    def markup_for(cost_cents, low, high, threshold)
+      return low if high.nil? || threshold.nil?
+
+      cost_cents.to_i >= threshold ? high : low
     end
 
     # cost × markup, rounded up to the nearest whole dollar minus 1¢ (.99).

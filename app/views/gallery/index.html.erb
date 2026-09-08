@@ -1,0 +1,28 @@
+<% content_for :title, "Gallery · #{store_name}" %>
+<% content_for :description, "Original paintings by Anna Villarreal — the canvas work behind the UV-reactive designs in the Ever Fluorescent shop." %>
+
+<section class="section">
+  <p class="section__eyebrow">Original works</p>
+  <h1 class="section__title">Gallery</h1>
+  <p class="hint gallery__intro">Paintings by Anna Villarreal. Many of the designs in the shop begin here, on canvas.</p>
+</section>
+
+<% if @paintings.any? %>
+  <div class="gallery-grid">
+    <% @paintings.each do |painting| %>
+      <%= link_to painting_path(painting), class: "gallery-card" do %>
+        <figure class="gallery-card__frame">
+          <%= image_tag painting.thumb, alt: painting.title, loading: "lazy", class: "gallery-card__img" %>
+        </figure>
+        <div class="gallery-card__body">
+          <h2 class="gallery-card__title"><%= painting.title %></h2>
+          <% if painting.caption_line.present? %>
+            <p class="hint"><%= painting.caption_line %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% else %>
+  <p class="hint">No paintings posted yet — check back soon.</p>
+<% end %>

@@ -1,0 +1,28 @@
+<% content_for :title, "Gallery" %>
+<h1>Painting gallery</h1>
+<p class="hint">Uploads shown at <%= link_to "/gallery", gallery_path %>. Lowest sort position first; ties fall back to newest.</p>
+
+<p class="btn-row"><%= link_to "Add a painting", new_admin_painting_path, class: "btn btn--primary btn--sm" %></p>
+
+<% if @paintings.any? %>
+  <table class="table">
+    <thead><tr><th></th><th>Title</th><th>Details</th><th>Pos</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <% @paintings.each do |painting| %>
+        <tr>
+          <td><% if painting.image.attached? %><%= image_tag painting.thumb, alt: "", class: "admin-thumb__sm" %><% end %></td>
+          <td><%= link_to painting.title, edit_admin_painting_path(painting) %></td>
+          <td class="hint"><%= painting.caption_line.presence || "—" %></td>
+          <td class="mono"><%= painting.position %></td>
+          <td><%= painting.published? ? "published" : %(<span class="hint">hidden</span>).html_safe %></td>
+          <td>
+            <%= button_to "Delete", admin_painting_path(painting), method: :delete, class: "linklike",
+                  data: { turbo_confirm: "Delete “#{painting.title}”? This removes the image too." } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="hint">Nothing uploaded yet.</p>
+<% end %>

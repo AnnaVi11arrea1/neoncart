@@ -4,6 +4,7 @@
     <title><%= content_for(:title) || "Admin" %> · <%= store_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="dark">
+    <meta name="robots" content="noindex,nofollow">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +25,7 @@
           <%= nav_link "Terminal (POS)", admin_terminal_path %>
           <%= nav_link "Fulfillment queue", admin_fulfillments_path %>
           <%= nav_link "Products", admin_products_path %>
+          <%= nav_link "Gallery", admin_paintings_path %>
           <%= nav_link "Tickets", admin_tickets_path %>
           <%= nav_link "Suppliers", admin_suppliers_path %>
           <%= nav_link "API keys", admin_api_keys_path %>

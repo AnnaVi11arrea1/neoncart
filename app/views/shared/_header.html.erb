@@ -5,6 +5,7 @@
     <% end %>
     <nav class="site-nav">
       <%= nav_link "Shop", products_path %>
+      <%= nav_link "Gallery", gallery_path %>
       <%= nav_link "Track order", order_lookup_path %>
       <% if preview_mode? %>
         <%= nav_link "Support", new_ticket_path %>

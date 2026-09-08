@@ -1,0 +1,55 @@
+<% content_for :title, "#{@painting.title} · Gallery · #{store_name}" %>
+<% content_for :description, @painting.description.presence || [@painting.title, @painting.caption_line.presence, "an original painting by Anna Villarreal"].compact.join(" — ") %>
+<% content_for :og_type, "article" %>
+<% if @painting.image.attached? %><% content_for :og_image, url_for(@painting.large) %><% end %>
+<% content_for :structured_data do %>
+  <%= json_ld({
+    "@context" => "https://schema.org",
+    "@type" => "VisualArtwork",
+    "name" => @painting.title,
+    "description" => page_description,
+    "image" => (url_for(@painting.large) if @painting.image.attached?),
+    "artform" => "Painting",
+    "artMedium" => @painting.medium.presence,
+    "dateCreated" => @painting.year&.to_s,
+    "creator" => { "@type" => "Person", "name" => "Anna Villarreal" },
+    "url" => painting_url(@painting)
+  }.compact) %>
+<% end %>
+
+<p class="hint"><%= link_to "← Back to the gallery", gallery_path %></p>
+
+<article class="painting">
+  <figure class="painting__frame">
+    <%= image_tag @painting.large, alt: @painting.title, class: "painting__img" %>
+  </figure>
+
+  <div class="painting__meta">
+    <h1 class="painting__title"><%= @painting.title %></h1>
+    <% if @painting.caption_line.present? %>
+      <p class="painting__caption mono"><%= @painting.caption_line %></p>
+    <% end %>
+    <% if @painting.description.present? %>
+      <div class="painting__desc"><%= simple_format @painting.description %></div>
+    <% end %>
+    <p class="hint">Prints and apparel of many of these designs are in the <%= link_to "shop", products_path %>.</p>
+  </div>
+</article>
+
+<% if @others.any? %>
+  <section class="section">
+    <h2 class="section__title">More work</h2>
+    <div class="gallery-grid gallery-grid--compact">
+      <% @others.each do |other| %>
+        <%= link_to painting_path(other), class: "gallery-card" do %>
+          <figure class="gallery-card__frame">
+            <%= image_tag other.thumb, alt: other.title, loading: "lazy", class: "gallery-card__img" %>
+          </figure>
+          <div class="gallery-card__body">
+            <h3 class="gallery-card__title"><%= other.title %></h3>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

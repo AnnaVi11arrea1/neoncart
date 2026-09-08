@@ -1,0 +1,37 @@
+<%= form_with model: [:admin, painting], class: "stack" do |f| %>
+  <% if painting.errors.any? %>
+    <div class="flash flash--alert">
+      <ul><% painting.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
+    </div>
+  <% end %>
+
+  <label class="field"><span>Title</span><%= f.text_field :title, required: true, placeholder: "Starbirth" %></label>
+
+  <div class="field-row">
+    <label class="field"><span>Medium</span><%= f.text_field :medium, placeholder: "Acrylic and UV pigment on canvas" %></label>
+    <label class="field"><span>Dimensions</span><%= f.text_field :dimensions, placeholder: "24 × 36 in" %></label>
+    <label class="field"><span>Year</span><%= f.number_field :year, placeholder: Time.current.year %></label>
+  </div>
+
+  <label class="field"><span>Description</span><%= f.text_area :description, rows: 5, placeholder: "The story behind the piece — shown on its own page." %></label>
+
+  <label class="field">
+    <span>Image<%= " (leave empty to keep the current one)" if painting.persisted? %></span>
+    <%= f.file_field :image, accept: Painting::CONTENT_TYPES.join(",") %>
+  </label>
+  <p class="hint">JPEG, PNG, WebP, GIF, or AVIF · up to 15 MB. Large photos are fine — the gallery generates its own resized versions.</p>
+
+  <% if painting.persisted? && painting.image.attached? %>
+    <figure class="admin-thumb"><%= image_tag painting.thumb, alt: painting.title %></figure>
+  <% end %>
+
+  <div class="field-row">
+    <label class="field"><span>Sort position</span><%= f.number_field :position %></label>
+    <label class="check"><%= f.check_box :published %> <span>Published (visible in the public gallery)</span></label>
+  </div>
+
+  <div class="btn-row">
+    <%= f.submit(painting.persisted? ? "Save" : "Add to gallery", class: "btn btn--primary btn--sm") %>
+    <%= link_to "Cancel", admin_paintings_path, class: "btn btn--ghost btn--sm" %>
+  </div>
+<% end %>

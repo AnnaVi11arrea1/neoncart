@@ -5,6 +5,13 @@ module ApplicationHelper
     number_to_currency(cents.to_i / 100.0, unit: currency == "usd" ? "$" : currency.upcase + " ")
   end
 
+  # Variants carry their option name in the jsonb ("Size", "Color", ...).
+  # Use it when every variant agrees, so a shirt says "Size", not "Option".
+  def variant_option_label(variants)
+    keys = variants.map { |v| v.options.keys.first }.uniq
+    keys.length == 1 && keys.first.present? ? keys.first : "Option"
+  end
+
   def status_chip(status)
     tag.span(status.to_s.humanize, class: "chip chip--#{status}")
   end

@@ -1,0 +1,24 @@
+<meta name="description" content="<%= page_description %>">
+<link rel="canonical" href="<%= canonical_url %>">
+<meta name="robots" content="index,follow">
+
+<%# Open Graph — how the page looks when shared to Facebook, Discord, iMessage %>
+<meta property="og:site_name" content="<%= store_name %>">
+<meta property="og:type" content="<%= content_for(:og_type).presence || "website" %>">
+<meta property="og:title" content="<%= page_title %>">
+<meta property="og:description" content="<%= page_description %>">
+<meta property="og:url" content="<%= canonical_url %>">
+<% if og_image_url.present? %>
+  <meta property="og:image" content="<%= og_image_url %>">
+  <meta name="twitter:card" content="summary_large_image">
+<% else %>
+  <meta name="twitter:card" content="summary">
+<% end %>
+<meta name="twitter:title" content="<%= page_title %>">
+<meta name="twitter:description" content="<%= page_description %>">
+
+<%# Favicons — /favicon.ico was 404ing, which browsers and crawlers both notice %>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<%= yield :structured_data %>

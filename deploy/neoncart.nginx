@@ -1,0 +1,63 @@
+# Neoncart — www.everfluorescent.com
+# Install: sudo cp deploy/neoncart.nginx /etc/nginx/sites-available/neoncart
+#          sudo ln -s /etc/nginx/sites-available/neoncart /etc/nginx/sites-enabled/
+#
+# TLS is terminated by Cloudflare; cloudflared connects here over plain HTTP on
+# loopback, so there is no certbot/443 block. Because the tunnel is the only way
+# in, X-Forwarded-Proto is pinned to https rather than $scheme — otherwise Rails
+# would generate http:// URLs and Stripe redirect_urls would be wrong.
+
+upstream neoncart {
+  server 127.0.0.1:3001;
+  keepalive 8;
+}
+
+# Apex -> www (single canonical host for SEO, Stripe, and OAuth redirects)
+server {
+  listen 80;
+  server_name everfluorescent.com;
+  return 301 https://www.everfluorescent.com$request_uri;
+}
+
+server {
+  listen 80;
+  server_name www.everfluorescent.com;
+
+  root /home/anna/neoncart/public;
+  client_max_body_size 20M;
+
+  # Real client IP comes from the tunnel, not the loopback peer.
+  set $client_ip $remote_addr;
+  if ($http_cf_connecting_ip) {
+    set $client_ip $http_cf_connecting_ip;
+  }
+
+  # Fingerprinted assets — immutable, served straight off disk.
+  location ~ ^/(assets|packs)/ {
+    expires max;
+    add_header Cache-Control "public, immutable";
+    access_log off;
+    gzip_static on;
+    try_files $uri @app;
+  }
+
+  # Active Storage product images proxy through the app (signed URLs).
+  location / {
+    try_files $uri @app;
+  }
+
+  location @app {
+    proxy_pass http://neoncart;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $client_ip;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_read_timeout 60s;
+
+    # Stripe webhook signature verification needs the raw, unbuffered body.
+    proxy_request_buffering off;
+  }
+}
