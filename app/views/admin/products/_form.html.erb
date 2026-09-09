@@ -18,7 +18,15 @@
 
   <label class="field"><span>Images (upload)</span><%= f.file_field :images, multiple: true, accept: "image/*" %></label>
   <% if product.images.attached? %>
-    <div class="thumb-row"><% product.images.each do |img| %><%= image_tag img.variant(resize_to_limit: [120, 120]) rescue image_tag(url_for(img), width: 120) %><% end %></div>
+    <p class="hint">Pick the main image shown on the shop page and product cards:</p>
+    <div class="thumb-row">
+      <% product.ordered_images.each do |img| %>
+        <label class="thumb-pick">
+          <%= f.radio_button :primary_image_id, img.id, checked: (img.id == product.ordered_images.first.id) %>
+          <%= image_tag img.variant(resize_to_limit: [120, 120]) rescue image_tag(url_for(img), width: 120) %>
+        </label>
+      <% end %>
+    </div>
   <% end %>
 
   <h2>Variants</h2>

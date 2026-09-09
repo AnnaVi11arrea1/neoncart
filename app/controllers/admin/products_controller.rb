@@ -51,7 +51,7 @@ module Admin
 
     def product_params
       permitted = params.require(:product).permit(
-        :title, :description, :category_id, :status, :featured,
+        :title, :description, :category_id, :status, :featured, :primary_image_id,
         :price_dollars, :compare_at_dollars, :tag_list, images: [],
         variants_attributes: %i[id title sku price_dollars available _destroy]
       )

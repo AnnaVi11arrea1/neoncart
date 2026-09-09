@@ -323,7 +323,11 @@ fieldset.field { border: 1px solid var(--border); border-radius: var(--radius-sm
 .feed li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink); }
 .feed li:last-child { border-bottom: none; }
 .thumb-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.thumb-row img { border-radius: 6px; border: 1px solid var(--border); }
+.thumb-row img { border-radius: 6px; border: 1px solid var(--border); display: block; }
+.thumb-pick { position: relative; display: inline-flex; cursor: pointer; }
+.thumb-pick input[type="radio"] { position: absolute; top: 6px; left: 6px; margin: 0; z-index: 1; }
+.thumb-pick img { transition: border-color 0.15s, box-shadow 0.15s; }
+.thumb-pick input[type="radio"]:checked ~ img { border-color: var(--uv-violet); box-shadow: 0 0 0 2px rgba(139,61,255,0.4); }
 .ok { color: var(--lume); }
 .err { color: var(--danger); }
 pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; overflow-x: auto; font-size: 13px; color: #cfc7e6; line-height: 1.5; }

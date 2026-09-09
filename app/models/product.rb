@@ -57,17 +57,24 @@ class Product < ApplicationRecord
     variant&.price_cents.presence || price_cents
   end
 
+  # Attached images in display order: the admin-chosen primary image (if any
+  # is still attached) first, then the rest in upload order.
+  def ordered_images
+    return [] unless images.attached?
+
+    imgs = images.to_a
+    primary = primary_image_id.present? && imgs.find { |i| i.id == primary_image_id }
+    primary ? [primary, *imgs.reject { |i| i.id == primary_image_id }] : imgs
+  end
+
   def primary_image_url
-    return Rails.application.routes.url_helpers.rails_blob_path(images.first, only_path: true) if images.attached?
+    return Rails.application.routes.url_helpers.rails_blob_path(ordered_images.first, only_path: true) if images.attached?
 
     product_images.first&.remote_url
   end
 
   def all_image_urls
-    urls = []
-    if images.attached?
-      urls += images.map { |i| Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true) }
-    end
+    urls = ordered_images.map { |i| Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true) }
     urls + product_images.map(&:remote_url).compact
   end
 
@@ -75,11 +82,11 @@ class Product < ApplicationRecord
   # beats a bare product title for image SEO — falls back to the title when
   # an image has none (e.g. remote supplier thumbnails).
   def primary_image_alt
-    images.attached? ? (images.first.metadata["alt"].presence || title) : title
+    images.attached? ? (ordered_images.first.metadata["alt"].presence || title) : title
   end
 
   def gallery_images
-    items = images.attached? ? images.map { |i| { url: Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true), alt: i.metadata["alt"].presence || title } } : []
+    items = ordered_images.map { |i| { url: Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true), alt: i.metadata["alt"].presence || title } }
     items + product_images.filter_map { |pi| { url: pi.remote_url, alt: title } if pi.remote_url.present? }
   end
 
