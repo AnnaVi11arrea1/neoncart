@@ -61,8 +61,17 @@ module Dropshipping
     def upsert_product!(external_id:, title:, description: nil, price_cents: 0, image_urls: [], variants: [], tags: [])
       product = Product.find_or_initialize_by(supplier: supplier, external_id: external_id.to_s)
       is_new = product.new_record?
-      product.assign_attributes(title:, description:, price_cents:, tags:)
-      product.status = "draft" if is_new # new imports need review before going live
+
+      # Title and description get hand-edited in the admin after import —
+      # a re-sync must never clobber that copywriting. Only brand-new
+      # products take the supplier's raw title/description; existing ones
+      # keep whatever's already on file.
+      if is_new
+        product.title = title
+        product.description = description
+        product.status = "draft" # new imports need review before going live
+      end
+      product.assign_attributes(price_cents:, tags:)
       product.save!
 
       image_urls.each_with_index do |url, i|

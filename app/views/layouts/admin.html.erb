@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
+    <%= javascript_importmap_tags "admin" %>
   </head>
 
   <body class="admin-body">
@@ -33,7 +33,8 @@
           <%= nav_link "API docs", admin_docs_path %>
           <%= nav_link "Job queue", admin_good_job_path %>
         </nav>
-        <div class="admin-nav__foot">
+        <div class="admin-nav__foot btn-row">
+          <%= link_to "← Back to store", root_path, class: "btn btn--ghost btn--sm" %>
           <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn--ghost btn--sm" %>
         </div>
       </aside>

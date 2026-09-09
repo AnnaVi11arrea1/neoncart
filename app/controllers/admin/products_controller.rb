@@ -63,9 +63,6 @@ module Admin
       p[:price_cents] = (p.delete(:price_dollars).to_f * 100).round if p[:price_dollars].present?
       p[:compare_at_price_cents] = (p.delete(:compare_at_dollars).to_f * 100).round if p[:compare_at_dollars].present?
       p[:tags] = p.delete(:tag_list).to_s.split(",").map { |t| t.strip.downcase }.reject(&:empty?) if p.key?(:tag_list)
-      Array(p[:variants_attributes]).each do |_k, v|
-        v[:price_cents] = (v.delete(:price_dollars).to_f * 100).round if v[:price_dollars].present?
-      end
       if p[:variants_attributes].is_a?(ActionController::Parameters)
         p[:variants_attributes].each_value do |v|
           v[:price_cents] = (v.delete(:price_dollars).to_f * 100).round if v[:price_dollars].present?

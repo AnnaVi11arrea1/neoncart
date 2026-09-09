@@ -59,7 +59,13 @@ class ProductsController < ApplicationController
       return
     end
 
-    @product = Product.active.find_by!(slug: params[:slug])
+    @product = Product.active.find_by(slug: params[:slug])
+    if @product.nil?
+      redirect_target = Product.active.find_by_old_slug(params[:slug])
+      return redirect_to product_path(redirect_target), status: :moved_permanently if redirect_target
+
+      raise ActiveRecord::RecordNotFound
+    end
     @variants = @product.variants.available
     # A product whose variants all came back unavailable from the supplier has
     # nothing to pick from — sell it and the order arrives with no size.
@@ -79,9 +85,13 @@ class ProductsController < ApplicationController
 
   def preview_categories
     [
-      CategoryPreview.new("Apparel", "apparel"),
-      CategoryPreview.new("Prints", "prints"),
-      CategoryPreview.new("Accessories", "accessories")
+      CategoryPreview.new("Pants", "pants"),
+      CategoryPreview.new("Shirts", "shirts"),
+      CategoryPreview.new("Hoodies", "hoodies"),
+      CategoryPreview.new("Hats", "hats"),
+      CategoryPreview.new("Tech", "tech"),
+      CategoryPreview.new("Blankets", "blankets"),
+      CategoryPreview.new("Tapestries", "tapestries")
     ]
   end
 
@@ -97,7 +107,7 @@ class ProductsController < ApplicationController
           compare_at_price_cents: 3900,
           description: "Soft cotton tee with UV-reactive cyan print.",
           tags: ["uv", "tee"],
-          category: categories[0],
+          category: categories[1],
           featured: true,
           all_image_urls: []
         ),
@@ -109,7 +119,7 @@ class ProductsController < ApplicationController
           compare_at_price_cents: nil,
           description: "Fluorescent gallery print with deep blacklight contrast.",
           tags: ["poster", "wall-art"],
-          category: categories[1],
+          category: categories[6],
           featured: true,
           all_image_urls: []
         ),
@@ -121,7 +131,7 @@ class ProductsController < ApplicationController
           compare_at_price_cents: nil,
           description: "Structured cap with stitched phosphor emblem.",
           tags: ["cap", "streetwear"],
-          category: categories[2],
+          category: categories[3],
           featured: false,
           all_image_urls: []
         )

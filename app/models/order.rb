@@ -44,6 +44,7 @@ class Order < ApplicationRecord
     log_event!("paid", "Payment confirmed")
     OrderMailer.confirmation(self).deliver_later
     Webhooks::Dispatcher.publish("order.paid", webhook_payload)
+    DiscordOrderNotificationJob.perform_later(id)
     SubmitOrderToSuppliersJob.perform_later(id)
   end
 

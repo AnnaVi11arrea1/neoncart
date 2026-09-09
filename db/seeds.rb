@@ -14,7 +14,7 @@ else
 end
 
 puts "== Categories =="
-%w[Apparel Prints Accessories Home].each_with_index do |name, i|
+%w[Pants Shirts Hoodies Hats Tech Blankets Tapestries].each_with_index do |name, i|
   Category.find_or_create_by!(slug: name.parameterize) { |c| c.name = name; c.position = i }
 end
 

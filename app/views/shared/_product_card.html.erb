@@ -1,7 +1,7 @@
 <%= link_to product_path(product.slug), class: "product-card" do %>
   <div class="product-card__img">
     <% if (url = product.primary_image_url) %>
-      <img src="<%= url %>" alt="<%= product.title %>" loading="lazy">
+      <img src="<%= url %>" alt="<%= product.respond_to?(:primary_image_alt) ? product.primary_image_alt : product.title %>" loading="lazy">
     <% else %>
       <div class="product-card__placeholder">◈</div>
     <% end %>

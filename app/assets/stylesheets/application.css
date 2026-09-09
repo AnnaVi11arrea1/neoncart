@@ -2,7 +2,9 @@
    Neoncart — UV blacklight theme for Ever Fluorescent
    Palette: deep violet-black grounds, UV violet + magenta + cyan
    glow, with a UV-reactive green (lume) reserved for success/highlight.
-   ============================================================ */
+   ============================================================
+ *= require actiontext
+ */
 
 :root {
   --bg: #0a0514;
@@ -119,6 +121,12 @@ a:hover { text-decoration: underline; }
 
 /* ---------- Hero ---------- */
 .hero { padding: 72px 0 56px; text-align: center; }
+.hero__image {
+  width: 240px; height: 240px; object-fit: cover; border-radius: 50%;
+  margin: 0 auto 28px; display: block;
+  border: 2px solid var(--border-bright);
+  box-shadow: 0 0 0 6px rgba(139,61,255,0.15), 0 0 60px rgba(46,230,255,0.25);
+}
 .hero__eyebrow { color: var(--cyan); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 18px; }
 .hero__title { font-size: clamp(38px, 7vw, 68px); line-height: 1.02; margin: 0 0 20px; font-weight: 700; }
 .hero__title { background: linear-gradient(180deg, #fff, #c9b8ff 60%, var(--uv-violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -187,9 +195,23 @@ fieldset.field { border: 1px solid var(--border); border-radius: var(--radius-sm
 
 /* ---------- Product page ---------- */
 .product-page { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; margin: 32px 0; }
+.product-page__main-wrap { position: relative; }
 .product-page__main { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-sunken); aspect-ratio: 1/1; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 80px; color: var(--border-bright); }
-.product-page__thumbs { display: flex; gap: 10px; margin-top: 12px; }
-.product-page__thumbs img { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; }
+.gallery-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(10,5,20,0.6); border: 1px solid var(--border-bright); color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.gallery-arrow:hover { background: var(--uv-violet); border-color: var(--uv-violet); }
+.gallery-arrow--prev { left: 12px; }
+.gallery-arrow--next { right: 12px; }
+.product-page__thumbs { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.product-page__thumb { padding: 0; border-radius: var(--radius-sm); border: 2px solid transparent; background: none; cursor: pointer; line-height: 0; }
+.product-page__thumb img { width: 72px; height: 72px; object-fit: cover; border-radius: calc(var(--radius-sm) - 2px); border: 1px solid var(--border); display: block; }
+.product-page__thumb:hover img { border-color: var(--uv-violet); }
+.product-page__thumb.is-active { border-color: var(--uv-violet); box-shadow: 0 0 0 2px rgba(139,61,255,0.3); }
 .product-page__info h1 { font-size: 32px; margin: 0 0 12px; }
 .product-page__price { font-family: "JetBrains Mono", monospace; font-size: 26px; color: var(--lume); margin: 0 0 24px; }
 .sold-out { display: inline-block; border: 1px solid var(--border-bright); border-radius: var(--radius-sm); padding: 10px 18px; margin: 0 0 8px; color: var(--muted); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; }

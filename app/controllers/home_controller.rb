@@ -40,9 +40,13 @@ class HomeController < ApplicationController
 
   def preview_categories
     [
-      CategoryPreview.new("Apparel", "apparel"),
-      CategoryPreview.new("Prints", "prints"),
-      CategoryPreview.new("Accessories", "accessories")
+      CategoryPreview.new("Pants", "pants"),
+      CategoryPreview.new("Shirts", "shirts"),
+      CategoryPreview.new("Hoodies", "hoodies"),
+      CategoryPreview.new("Hats", "hats"),
+      CategoryPreview.new("Tech", "tech"),
+      CategoryPreview.new("Blankets", "blankets"),
+      CategoryPreview.new("Tapestries", "tapestries")
     ]
   end
 
@@ -58,7 +62,7 @@ class HomeController < ApplicationController
           compare_at_price_cents: 3900,
           description: "Soft cotton tee with UV-reactive cyan print.",
           tags: ["uv", "tee"],
-          category: categories[0],
+          category: categories[1],
           featured: true,
           all_image_urls: []
         ),
@@ -70,7 +74,7 @@ class HomeController < ApplicationController
           compare_at_price_cents: nil,
           description: "Fluorescent gallery print with deep blacklight contrast.",
           tags: ["poster", "wall-art"],
-          category: categories[1],
+          category: categories[6],
           featured: true,
           all_image_urls: []
         ),
@@ -82,7 +86,7 @@ class HomeController < ApplicationController
           compare_at_price_cents: nil,
           description: "Structured cap with stitched phosphor emblem.",
           tags: ["cap", "streetwear"],
-          category: categories[2],
+          category: categories[3],
           featured: false,
           all_image_urls: []
         )

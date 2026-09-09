@@ -1,5 +1,6 @@
+<% product_description_text = @product.description.is_a?(ActionText::RichText) ? @product.description.to_plain_text : @product.description.to_s %>
 <% content_for :title, "#{@product.title} · #{store_name}" %>
-<% content_for :description, @product.description.presence || "#{@product.title} — UV-reactive artwork by Anna Villarreal, printed to order and shipped from an independent studio." %>
+<% content_for :description, product_description_text.presence || "#{@product.title} — UV-reactive artwork by Anna Villarreal, printed to order and shipped from an independent studio." %>
 <% content_for :og_type, "product" %>
 <% if (og = @product.all_image_urls.first).present? %><% content_for :og_image, absolute_image_url(og) %><% end %>
 <% content_for :structured_data do %>
@@ -33,16 +34,28 @@
 <% end %>
 <article class="product-page">
   <div class="product-page__gallery">
-    <% urls = @product.all_image_urls %>
-    <% if urls.any? %>
-      <img class="product-page__main" src="<%= urls.first %>" alt="<%= @product.title %>">
-      <% if urls.size > 1 %>
-        <div class="product-page__thumbs">
-          <% urls.drop(1).first(5).each do |u| %>
-            <img src="<%= u %>" alt="" loading="lazy">
-          <% end %>
-        </div>
-      <% end %>
+    <% gallery = @product.respond_to?(:gallery_images) ? @product.gallery_images : @product.all_image_urls.map { |u| { url: u, alt: @product.title } } %>
+    <% if gallery.any? %>
+      <div class="product-page__main-wrap" data-controller="gallery">
+        <% if gallery.size > 1 %>
+          <button type="button" class="gallery-arrow gallery-arrow--prev" data-action="gallery#prev" aria-label="Previous image">‹</button>
+        <% end %>
+        <img class="product-page__main" data-gallery-target="main" src="<%= gallery.first[:url] %>" alt="<%= gallery.first[:alt] %>">
+        <% if gallery.size > 1 %>
+          <button type="button" class="gallery-arrow gallery-arrow--next" data-action="gallery#next" aria-label="Next image">›</button>
+        <% end %>
+        <% if gallery.size > 1 %>
+          <div class="product-page__thumbs">
+            <% gallery.each_with_index do |img, i| %>
+              <button type="button" class="product-page__thumb <%= "is-active" if i.zero? %>"
+                      data-gallery-target="thumb" data-action="gallery#select" data-gallery-index-param="<%= i %>"
+                      data-url="<%= img[:url] %>" data-alt="<%= img[:alt] %>" aria-label="Show image <%= i + 1 %>">
+                <img src="<%= img[:url] %>" alt="<%= img[:alt] %>" loading="lazy">
+              </button>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
     <% else %>
       <div class="product-card__placeholder product-page__main">◈</div>
     <% end %>
@@ -77,8 +90,12 @@
       <% end %>
     <% end %>
 
-    <% if @product.description.present? %>
-      <div class="product-page__desc"><%= simple_format(strip_tags(@product.description)) %></div>
+    <% if @product.description.is_a?(ActionText::RichText) %>
+      <% if @product.description? %>
+        <div class="product-page__desc"><%= @product.description %></div>
+      <% end %>
+    <% elsif @product.description.present? %>
+      <div class="product-page__desc"><%= simple_format(@product.description) %></div>
     <% end %>
 
     <% if @product.tags.any? %>

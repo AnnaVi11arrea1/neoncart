@@ -1,5 +1,5 @@
-<% content_for :title, "#{store_name} · UV-reactive wearable art by Anna Villarreal" %>
-<% content_for :description, "Original blacklight-reactive artwork by independent artist Anna Villarreal, printed on apparel, board shorts, and prints. Every design is painted, processed, and shipped by the artist." %>
+<% content_for :title, "#{store_name} · UV-Reactive Festival Wear by Anna Villarreal" %>
+<% content_for :description, "Original blacklight-reactive festival wear by independent artist Anna Villarreal — UV-reactive apparel, prints, and accessories for raves and music festivals. Every design is painted, processed, and shipped by the artist." %>
 <% content_for :structured_data do %>
   <%= json_ld({
     "@context" => "https://schema.org",
@@ -26,9 +26,11 @@
   }) %>
 <% end %>
 <section class="hero">
-  <p class="hero__eyebrow">UV-reactive art · printed on demand · shipped worldwide</p>
+  <%= image_tag "uv-reactive-blacklight-festival-portrait-art.jpg",
+        alt: "UV-reactive blacklight portrait art by Ever Fluorescent — glowing face paint inspiration for festival wear",
+        class: "hero__image", width: 480, height: 480 %>
   <h1 class="hero__title">Wearable art<br>by Anna Villarreal.</h1>
-  <p class="hero__sub">Thank you for visiting the Ever Fluorescent Online store. Each design is processed and managed by me and this online store I built. Thank you for supporting an independent artist. &lt;3</p>
+  <p class="hero__sub">UV-reactive apparel, prints, and accessories designed for music festivals and blacklight nights. Thank you for supporting an independent artist — every design is painted, processed, and shipped by me. &lt;3</p>
   <div class="hero__actions">
     <%= link_to "Shop the collection", products_path, class: "btn btn--primary btn--lg" %>
     <%= link_to "Track an order", order_lookup_path, class: "btn btn--ghost btn--lg" %>

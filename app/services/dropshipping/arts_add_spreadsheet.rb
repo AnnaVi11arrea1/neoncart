@@ -68,8 +68,8 @@ module Dropshipping
           variants: []
         })
 
-        if (img = get.call("Images")[%r{https?://\S+}]) && !product[:image_urls].include?(img)
-          product[:image_urls] << img
+        get.call("Images").scan(%r{https?://[^\s,;|]+}).each do |img|
+          product[:image_urls] << img unless product[:image_urls].include?(img)
         end
 
         size = decode(get.call("Size")).presence || "Default"

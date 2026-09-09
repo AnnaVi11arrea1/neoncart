@@ -4,6 +4,7 @@ class Product < ApplicationRecord
   has_many :variants, -> { order(:position) }, dependent: :destroy
   has_many :product_images, -> { order(:position) }, dependent: :destroy
   has_many_attached :images
+  has_rich_text :description
 
   accepts_nested_attributes_for :variants, allow_destroy: true, reject_if: :all_blank
 
@@ -20,11 +21,35 @@ class Product < ApplicationRecord
   def self.search(q)
     return all if q.blank?
 
-    where("products.title ILIKE :q OR products.description ILIKE :q OR :plain = ANY(products.tags)",
-          q: "%#{sanitize_sql_like(q)}%", plain: q.to_s.downcase)
+    left_joins(:rich_text_description)
+      .where("products.title ILIKE :q OR action_text_rich_texts.body ILIKE :q OR :plain = ANY(products.tags)",
+             q: "%#{sanitize_sql_like(q)}%", plain: q.to_s.downcase)
+  end
+
+  def self.find_by_old_slug(slug)
+    where("? = ANY (old_slugs)", slug).first
+  end
+
+  def self.unique_slug_for(title, except_id: nil)
+    base = title.to_s.parameterize.presence || "product"
+    scope = except_id ? where.not(id: except_id) : all
+    candidate = base
+    n = 1
+    candidate = "#{base}-#{n += 1}" while scope.exists?(slug: candidate)
+    candidate
   end
 
   def to_param = slug
+
+  # Bring the URL in line with the current title (e.g. after a rename),
+  # keeping the old one around so its links 301 instead of 404ing.
+  def refresh_slug!
+    candidate = self.class.unique_slug_for(title, except_id: id)
+    return false if candidate == slug
+
+    update!(old_slugs: (old_slugs + [slug]).uniq, slug: candidate)
+    true
+  end
 
   def manual? = supplier_id.nil?
 
@@ -46,15 +71,23 @@ class Product < ApplicationRecord
     urls + product_images.map(&:remote_url).compact
   end
 
+  # Descriptive alt text set at upload time (see ActiveStorage blob metadata)
+  # beats a bare product title for image SEO — falls back to the title when
+  # an image has none (e.g. remote supplier thumbnails).
+  def primary_image_alt
+    images.attached? ? (images.first.metadata["alt"].presence || title) : title
+  end
+
+  def gallery_images
+    items = images.attached? ? images.map { |i| { url: Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true), alt: i.metadata["alt"].presence || title } } : []
+    items + product_images.filter_map { |pi| { url: pi.remote_url, alt: title } if pi.remote_url.present? }
+  end
+
   private
 
   def generate_slug
     return if slug.present?
 
-    base = title.to_s.parameterize
-    candidate = base
-    n = 1
-    candidate = "#{base}-#{n += 1}" while self.class.exists?(slug: candidate)
-    self.slug = candidate
+    self.slug = self.class.unique_slug_for(title)
   end
 end

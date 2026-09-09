@@ -6,18 +6,14 @@
   <h1>Shop</h1>
   <%= form_with url: products_path, method: :get, class: "searchbar" do |f| %>
     <%= f.search_field :q, value: params[:q], placeholder: "Search the glow…", "aria-label": "Search products" %>
+    <% if @categories.any? %>
+      <%= f.select :category,
+            options_for_select([["All categories", ""]] + @categories.map { |c| [c.name, c.slug] }, params[:category]),
+            {}, "aria-label": "Filter by category", onchange: "this.form.requestSubmit()" %>
+    <% end %>
     <%= f.submit "Search", class: "btn btn--sm" %>
   <% end %>
 </div>
-
-<% if @categories.any? %>
-  <div class="filter-row">
-    <%= link_to "All", products_path(q: params[:q]), class: "chip #{'chip--on' if params[:category].blank?}" %>
-    <% @categories.each do |c| %>
-      <%= link_to c.name, products_path(category: c.slug, q: params[:q]), class: "chip #{'chip--on' if params[:category] == c.slug}" %>
-    <% end %>
-  </div>
-<% end %>
 
 <% if @products.any? %>
   <div class="product-grid">
