@@ -17,6 +17,7 @@ module Admin
     def create
       @product = Product.new(product_params)
       if @product.save
+        @product.images.attach(new_image_uploads)
         redirect_to edit_admin_product_path(@product), notice: "Product created."
       else
         render :new, status: :unprocessable_entity
@@ -27,6 +28,7 @@ module Admin
 
     def update
       if @product.update(product_params)
+        @product.images.attach(new_image_uploads)
         redirect_to edit_admin_product_path(@product), notice: "Saved."
       else
         render :edit, status: :unprocessable_entity
@@ -49,10 +51,20 @@ module Admin
       @product = Product.find_by!(slug: params[:id])
     end
 
+    # Images are deliberately NOT in product_params. has_many_attached=
+    # treats any mass-assignment — even an untouched file input's blank
+    # submission, even a single real upload — as "replace the whole
+    # collection," which silently destroyed every existing photo on save.
+    # Uploads are additive: pulled from raw params and .attach()ed
+    # separately after save, which only ever adds.
+    def new_image_uploads
+      Array(params.dig(:product, :images)).select { |f| f.respond_to?(:original_filename) }
+    end
+
     def product_params
       permitted = params.require(:product).permit(
         :title, :description, :category_id, :status, :featured, :primary_image_id,
-        :price_dollars, :compare_at_dollars, :tag_list, images: [],
+        :price_dollars, :compare_at_dollars, :tag_list,
         variants_attributes: %i[id title sku price_dollars available _destroy]
       )
       translate_money!(permitted)
