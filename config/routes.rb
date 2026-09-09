@@ -44,6 +44,7 @@ Rails.application.routes.draw do
     root "dashboard#index"
     resources :products do
       member { post :archive }
+      resources :photos, only: :destroy, controller: "product_photos"
     end
     resources :orders, only: %i[index show] do
       member do

@@ -21,10 +21,15 @@
     <p class="hint">Pick the main image shown on the shop page and product cards:</p>
     <div class="thumb-row">
       <% product.ordered_images.each do |img| %>
-        <label class="thumb-pick">
-          <%= f.radio_button :primary_image_id, img.id, checked: (img.id == product.ordered_images.first.id) %>
-          <%= image_tag img.variant(resize_to_limit: [120, 120]) rescue image_tag(url_for(img), width: 120) %>
-        </label>
+        <div class="thumb-pick-wrap">
+          <label class="thumb-pick">
+            <%= f.radio_button :primary_image_id, img.id, checked: (img.id == product.ordered_images.first.id) %>
+            <%= image_tag img.variant(resize_to_limit: [120, 120]) rescue image_tag(url_for(img), width: 120) %>
+          </label>
+          <%= link_to "×", admin_product_photo_path(product, img.id),
+                data: { turbo_method: :delete, turbo_confirm: "Remove this photo?" },
+                class: "thumb-pick__remove", "aria-label": "Delete this photo" %>
+        </div>
       <% end %>
     </div>
   <% end %>
