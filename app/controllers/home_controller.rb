@@ -8,11 +8,11 @@ class HomeController < ApplicationController
     end
 
     @featured = Product.storefront.where(featured: true).includes(:product_images).limit(4)
-    @latest = Product.storefront.includes(:product_images).limit(8)
+    @latest = Product.storefront.where(featured: false).includes(:product_images).limit(8)
     @categories = Category.joins(:products).where(products: { status: "active" }).distinct
   rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
     @featured = preview_products.select(&:featured).first(4)
-    @latest = preview_products.first(8)
+    @latest = preview_products.reject(&:featured).first(8)
     @categories = preview_categories
     flash.now[:alert] = "Database unavailable. Showing preview data."
   end
