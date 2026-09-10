@@ -24,7 +24,15 @@ module Dropshipping
   #   {"markup": 3.5, "markup_above": 2.5, "tier_threshold_cents": 1333}
   # meaning: cost under $13.33 -> 3.5x, cost at or above it -> 2.5x. With
   # markup_above unset the single "markup" applies to everything.
+  #
+  # Actual per-item shipping cost (~$14) runs well above the flat $5.99 we
+  # charge at checkout. Rather than raise that visible fee, a flat shipping
+  # buffer is added to retail price AFTER the markup, on every item
+  # regardless of cost (shipping cost doesn't scale with product cost, so a
+  # flat add-on closes the gap evenly instead of over-loading expensive
+  # items). Override via supplier settings: {"shipping_buffer_cents": 800}.
   DEFAULT_MARKUP = 3.0
+  DEFAULT_SHIPPING_BUFFER_CENTS = 800
 
   class ArtsAddAdapter < BaseAdapter
     # Parse an uploaded ArtsAdd export and upsert products/variants.
@@ -36,6 +44,7 @@ module Dropshipping
       low        = (supplier.settings["markup"].presence || DEFAULT_MARKUP).to_f
       high       = supplier.settings["markup_above"].presence&.to_f
       threshold  = supplier.settings["tier_threshold_cents"].presence&.to_i
+      buffer     = (supplier.settings["shipping_buffer_cents"].presence || DEFAULT_SHIPPING_BUFFER_CENTS).to_i
 
       products.each do |attrs|
         # ArtsAdd-specific fields go on product.metadata (upsert_product!
@@ -48,11 +57,11 @@ module Dropshipping
           "cost_cents" => cost_cents
         }.compact
 
-        # Cost -> retail markup, applied to the product and every variant.
-        attrs[:price_cents] = retail_cents(cost_cents, markup_for(cost_cents, low, high, threshold))
+        # Cost -> retail markup + shipping buffer, applied to the product and every variant.
+        attrs[:price_cents] = retail_cents(cost_cents, markup_for(cost_cents, low, high, threshold), buffer)
         attrs[:variants] = Array(attrs[:variants]).map do |v|
           vc = v[:price_cents].to_i
-          v.merge(price_cents: retail_cents(vc, markup_for(vc, low, high, threshold)))
+          v.merge(price_cents: retail_cents(vc, markup_for(vc, low, high, threshold), buffer))
         end
 
         product = upsert_product!(**attrs)
@@ -69,11 +78,11 @@ module Dropshipping
       cost_cents.to_i >= threshold ? high : low
     end
 
-    # cost × markup, rounded up to the nearest whole dollar minus 1¢ (.99).
-    def retail_cents(cost_cents, markup)
+    # (cost × markup) + flat shipping buffer, rounded to a .99 ending.
+    def retail_cents(cost_cents, markup, shipping_buffer_cents = 0)
       return cost_cents.to_i if cost_cents.to_i <= 0
 
-      (cost_cents * markup / 100.0).round * 100 - 1
+      ((cost_cents * markup + shipping_buffer_cents) / 100.0).round * 100 - 1
     end
 
     def sync_products!
