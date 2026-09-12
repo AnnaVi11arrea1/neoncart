@@ -1,15 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="uv">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKQBLH064J"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-HKQBLH064J');
-    </script>
+    <%# No analytics tag here on purpose: admin sessions are Anna's own and,
+        at this store's traffic, they visibly skew the storefront reports. %>
     <title><%= content_for(:title) || "Admin" %> · <%= store_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="dark">

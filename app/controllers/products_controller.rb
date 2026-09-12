@@ -36,7 +36,7 @@ class ProductsController < ApplicationController
       return
     end
 
-    scope = Product.storefront.includes(:product_images, :category)
+    scope = Product.storefront.with_card_images.includes(:category)
     scope = scope.where(categories: { slug: params[:category] }).references(:category) if params[:category].present?
     scope = scope.search(params[:q])
     @pagy, @products = pagy(scope)
@@ -59,7 +59,7 @@ class ProductsController < ApplicationController
       return
     end
 
-    @product = Product.active.find_by(slug: params[:slug])
+    @product = Product.active.with_card_images.find_by(slug: params[:slug])
     if @product.nil?
       redirect_target = Product.active.find_by_old_slug(params[:slug])
       return redirect_to product_path(redirect_target), status: :moved_permanently if redirect_target
@@ -70,7 +70,7 @@ class ProductsController < ApplicationController
     # A product whose variants all came back unavailable from the supplier has
     # nothing to pick from — sell it and the order arrives with no size.
     @sold_out = @variants.empty? && @product.variants.exists?
-    @related = Product.storefront.where(category_id: @product.category_id).where.not(id: @product.id).limit(4)
+    @related = Product.storefront.with_card_images.where(category_id: @product.category_id).where.not(id: @product.id).limit(4)
   rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
     @product = preview_products.find { |p| p.slug == params[:slug] }
     raise ActiveRecord::RecordNotFound unless @product

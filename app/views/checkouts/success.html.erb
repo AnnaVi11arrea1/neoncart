@@ -1,6 +1,15 @@
 <% content_for :title, "Order confirmed · #{store_name}" %>
 <div class="confirm">
   <% if @order && !@order.pending? %>
+    <%# once_key: refreshing the confirmation page must not bank a second sale. %>
+    <%= ga_event("purchase", {
+          transaction_id: @order.number,
+          currency: @order.currency.to_s.upcase,
+          value: ga_price(@order.total_cents),
+          tax: ga_price(@order.tax_cents),
+          shipping: ga_price(@order.shipping_cents),
+          items: @order_items.map { |oi| ga_order_item(oi) }
+        }, once_key: "purchase:#{@order.number}") %>
     <p class="confirm__glyph">✦</p>
     <h1>Order confirmed</h1>
     <p>Thanks! Your order <span class="order-number mono"><%= @order.number %></span> is paid and heading into production.</p>

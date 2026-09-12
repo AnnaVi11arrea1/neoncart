@@ -32,6 +32,14 @@
     ]
   }) %>
 <% end %>
+<% unless preview_mode? %>
+  <%= ga_event("view_item", {
+        currency: @product.currency.to_s.upcase,
+        value: ga_price(@product.price_cents),
+        items: [ga_item(@product)]
+      }) %>
+<% end %>
+
 <article class="product-page">
   <div class="product-page__gallery">
     <% gallery = @product.respond_to?(:gallery_images) ? @product.gallery_images : @product.all_image_urls.map { |u| { url: u, alt: @product.title } } %>

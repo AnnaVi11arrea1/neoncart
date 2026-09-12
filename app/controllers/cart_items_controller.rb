@@ -9,7 +9,19 @@ class CartItemsController < ApplicationController
       return redirect_to product_path(product.slug), alert: "Pick an available option first."
     end
 
-    current_cart.add(product, variant:, quantity: params.fetch(:quantity, 1).to_i.clamp(1, 99))
+    quantity = params.fetch(:quantity, 1).to_i.clamp(1, 99)
+    current_cart.add(product, variant:, quantity:)
+
+    # The add happens here but the browser lands on the cart, so the GA4 event
+    # rides along in the flash and shared/_analytics renders it there.
+    flash[:ga_event] = {
+      "name" => "add_to_cart",
+      "params" => {
+        "currency" => product.currency.to_s.upcase,
+        "value" => helpers.ga_price((variant&.price_cents_or_default || product.price_cents) * quantity),
+        "items" => [helpers.ga_item(product, variant:, quantity:).deep_stringify_keys]
+      }
+    }
     redirect_to cart_path, notice: "Added to cart."
   end
 

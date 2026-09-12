@@ -1,4 +1,7 @@
 <% content_for :title, "Cart · #{store_name}" %>
+<% unless preview_mode? || @cart.empty? %>
+  <%= ga_event("view_cart", ga_cart_payload(@cart, @items)) %>
+<% end %>
 <h1>Your cart</h1>
 
 <% if @cart.empty? %>
@@ -11,7 +14,7 @@
     <table class="table">
       <thead><tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr></thead>
       <tbody>
-        <% @cart.cart_items.includes(product: :product_images).each do |item| %>
+        <% @items.each do |item| %>
           <tr>
             <td>
               <div class="cart__item">
@@ -36,7 +39,18 @@
       <p class="cart__subtotal">Subtotal <strong class="mono"><%= format_money(@cart.subtotal_cents) %></strong></p>
       <p class="hint">Shipping and tax calculated at checkout. Pay by card, Google Pay, or Apple Pay.</p>
       <%= button_to "Checkout →", checkout_path, method: :post,
+            form: { id: "checkout-form" },
             data: { turbo: false }, class: "btn btn--primary btn--lg btn--wide" %>
+      <%# begin_checkout fires on submit rather than on cart view, so it counts
+          intent to pay and not just window shopping. gtag uses sendBeacon, so
+          it still goes out as the browser leaves for Stripe. %>
+      <% unless preview_mode? %>
+        <script>
+          document.getElementById('checkout-form').addEventListener('submit', function () {
+            gtag('event', 'begin_checkout', <%== ga_json(ga_cart_payload(@cart, @items)) %>);
+          }, { once: true });
+        </script>
+      <% end %>
     </div>
   </div>
 <% end %>

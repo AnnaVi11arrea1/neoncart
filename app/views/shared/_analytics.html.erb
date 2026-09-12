@@ -1,0 +1,5 @@
+<%# GA4 events that belong to the action just completed rather than to the page
+    being rendered — CartItemsController sets one before redirecting to /cart. %>
+<% if (event = flash[:ga_event]).is_a?(Hash) && event["name"].present? %>
+  <%= ga_event(event["name"], event["params"] || {}) %>
+<% end %>

@@ -120,18 +120,22 @@ a:hover { text-decoration: underline; }
 .flash .token-reveal { word-break: break-all; color: var(--cyan); margin-top: 6px; }
 
 /* ---------- Hero ---------- */
-.hero { padding: 72px 0 56px; text-align: center; }
+/* Tightened so the first row of product cards clears the fold: the old hero
+   pushed the grid ~780px down and 77% of visitors bounced off it. */
+.hero { padding: 40px 0 24px; text-align: center; }
 .hero__image {
-  width: 240px; height: 240px; object-fit: cover; border-radius: 50%;
-  margin: 0 auto 28px; display: block;
+  width: 156px; height: 156px; object-fit: cover; border-radius: 50%;
+  margin: 0 auto 20px; display: block;
   border: 2px solid var(--border-bright);
   box-shadow: 0 0 0 6px rgba(139,61,255,0.15), 0 0 60px rgba(46,230,255,0.25);
 }
 .hero__eyebrow { color: var(--cyan); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 18px; }
-.hero__title { font-size: clamp(38px, 7vw, 68px); line-height: 1.02; margin: 0 0 20px; font-weight: 700; }
+.hero__title { font-size: clamp(30px, 5vw, 48px); line-height: 1.04; margin: 0 0 14px; font-weight: 700; }
 .hero__title { background: linear-gradient(180deg, #fff, #c9b8ff 60%, var(--uv-violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hero__sub { color: var(--muted); font-size: 18px; max-width: 560px; margin: 0 auto 32px; }
+.hero__sub { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto 22px; }
 .hero__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+/* The grid is the point of the page — don't re-add a gap under the hero. */
+.hero + .section { padding-top: 10px; }
 
 /* ---------- Sections + product grid ---------- */
 .section { padding: 40px 0; }
@@ -355,7 +359,9 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
 }
 @media (max-width: 560px) {
   .site-header__row { flex-direction: column; align-items: flex-start; }
-  .hero { padding: 48px 0 36px; }
+  .hero { padding: 24px 0 16px; }
+  .hero__image { width: 124px; height: 124px; margin: 0 auto 14px; }
+  .hero__sub { font-size: 15px; margin: 0 auto 18px; }
   .cart__summary { margin-left: 0; }
 }
 

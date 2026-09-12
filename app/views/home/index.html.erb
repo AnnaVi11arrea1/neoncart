@@ -28,7 +28,7 @@
 <section class="hero">
   <%= image_tag "uv-reactive-blacklight-festival-portrait-art.jpg",
         alt: "UV-reactive blacklight portrait art by Ever Fluorescent — glowing face paint inspiration for festival wear",
-        class: "hero__image", width: 480, height: 480 %>
+        class: "hero__image", width: 312, height: 312, fetchpriority: "high" %>
   <h1 class="hero__title">Wearable art<br>by Anna Villarreal.</h1>
   <p class="hero__sub">UV-reactive apparel, prints, and accessories designed for music festivals and blacklight nights. Thank you for supporting an independent artist — every design is painted, processed, and shipped by me. &lt;3</p>
   <div class="hero__actions">
@@ -40,22 +40,26 @@
 <% if @featured.any? %>
   <section class="section">
     <h2 class="section__title">Featured</h2>
-    <div class="product-grid">
-      <% @featured.each do |product| %>
-        <%= render "shared/product_card", product: product %>
-      <% end %>
-    </div>
+    <% cache @featured do %>
+      <div class="product-grid">
+        <% @featured.each do |product| %>
+          <%= render "shared/product_card", product: product %>
+        <% end %>
+      </div>
+    <% end %>
   </section>
 <% end %>
 
 <section class="section">
   <h2 class="section__title">Latest drops</h2>
   <% if @latest.any? %>
-    <div class="product-grid">
-      <% @latest.each do |product| %>
-        <%= render "shared/product_card", product: product %>
-      <% end %>
-    </div>
+    <% cache @latest do %>
+      <div class="product-grid">
+        <% @latest.each do |product| %>
+          <%= render "shared/product_card", product: product %>
+        <% end %>
+      </div>
+    <% end %>
   <% else %>
     <div class="empty">
       <p>No products yet. Head to <strong>Admin → Suppliers → Sync</strong> to pull your catalog, or add one manually under <strong>Admin → Products</strong>.</p>
