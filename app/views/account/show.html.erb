@@ -1,0 +1,59 @@
+<% content_for :title, "My account · #{store_name}" %>
+<h1>My account</h1>
+
+<div class="account-grid">
+  <div class="stack">
+    <section class="panel">
+      <h2>Recent orders</h2>
+      <% if @orders.any? %>
+        <table class="table">
+          <thead><tr><th>Order</th><th>Placed</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody>
+            <% @orders.each do |order| %>
+              <tr>
+                <td><%= link_to order.number, order_path(order.number), class: "mono" %></td>
+                <td><%= order.placed_at&.strftime("%b %-d, %Y") || "—" %></td>
+                <td class="mono"><%= format_money(order.total_cents) %></td>
+                <td><%= status_chip(order.status) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="hint"><%= link_to "See all orders →", orders_path %></p>
+      <% else %>
+        <p class="hint">No orders yet. <%= link_to "Shop now", products_path %>.</p>
+      <% end %>
+    </section>
+
+    <section class="panel">
+      <h2>Favorites</h2>
+      <% if @favorites.any? %>
+        <div class="product-grid">
+          <% @favorites.each do |favorite| %><%= render "shared/product_card", product: favorite.product %><% end %>
+        </div>
+      <% else %>
+        <p class="hint">Nothing saved yet — tap the heart on a product page to save it here.</p>
+      <% end %>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Store credit</h2>
+    <p class="credit-balance mono"><%= format_money(current_user.store_credit_cents) %></p>
+    <p class="hint">Earn $5 credit for every $50 you spend. Applied automatically as a checkbox at checkout.</p>
+    <% if @credit_transactions.any? %>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Amount</th><th>Note</th></tr></thead>
+        <tbody>
+          <% @credit_transactions.each do |t| %>
+            <tr>
+              <td class="hint"><%= t.created_at.strftime("%b %-d, %Y") %></td>
+              <td class="mono"><%= t.amount_cents.positive? ? "+" : "" %><%= format_money(t.amount_cents) %></td>
+              <td class="hint"><%= t.kind.humanize %><%= " — #{t.order.number}" if t.order %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </section>
+</div>

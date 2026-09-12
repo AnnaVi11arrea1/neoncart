@@ -3,6 +3,8 @@ class Product < ApplicationRecord
   belongs_to :supplier, optional: true
   has_many :variants, -> { order(:position) }, dependent: :destroy
   has_many :product_images, -> { order(:position) }, dependent: :destroy
+  has_many :reviews, dependent: :nullify
+  has_many :favorites, dependent: :destroy
   has_many_attached :images
   has_rich_text :description
 
@@ -57,6 +59,13 @@ class Product < ApplicationRecord
   end
 
   def manual? = supplier_id.nil?
+
+  # Cached at read time — no counter-cache column needed at this volume.
+  def average_rating
+    reviews.visible.average(:rating)&.round(1)
+  end
+
+  def reviews_count = reviews.visible.count
 
   def display_price_cents(variant = nil)
     variant&.price_cents.presence || price_cents

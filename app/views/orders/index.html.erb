@@ -2,7 +2,7 @@
 <h1>My orders</h1>
 <% if @orders.any? %>
   <table class="table">
-    <thead><tr><th>Order</th><th>Placed</th><th>Total</th><th>Status</th></tr></thead>
+    <thead><tr><th>Order</th><th>Placed</th><th>Total</th><th>Status</th><th></th></tr></thead>
     <tbody>
       <% @orders.each do |order| %>
         <tr>
@@ -10,6 +10,11 @@
           <td><%= order.placed_at&.strftime("%b %-d, %Y") || "—" %></td>
           <td class="mono"><%= format_money(order.total_cents) %></td>
           <td><%= status_chip(order.status) %></td>
+          <td>
+            <% order.order_items.reject { |i| i.review.present? || i.product.nil? }.each do |item| %>
+              <%= link_to "Review #{item.title}", new_order_item_review_path(item), class: "hint" %><br>
+            <% end %>
+          </td>
         </tr>
       <% end %>
     </tbody>

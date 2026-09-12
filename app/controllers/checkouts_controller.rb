@@ -7,7 +7,8 @@ class CheckoutsController < ApplicationController
     session_obj = Payments::StripeCheckout.session_for(
       order,
       success_url: checkout_success_url,
-      cancel_url: checkout_cancel_url
+      cancel_url: checkout_cancel_url,
+      credit_cents: order.credit_applied_cents
     )
     order.update!(stripe_session_id: session_obj.id)
     redirect_to session_obj.url, allow_other_host: true, status: :see_other
@@ -40,7 +41,8 @@ class CheckoutsController < ApplicationController
 
   def build_order_from(cart)
     Order.create!(user: current_user, email: current_user&.email, currency: "usd",
-                  subtotal_cents: cart.subtotal_cents, total_cents: cart.subtotal_cents).tap do |order|
+                  subtotal_cents: cart.subtotal_cents, total_cents: cart.subtotal_cents,
+                  credit_applied_cents: credit_to_apply(cart)).tap do |order|
       cart.cart_items.includes(:product, :variant).each do |ci|
         order.order_items.create!(
           product: ci.product, variant: ci.variant, supplier: ci.product.supplier,
@@ -50,6 +52,14 @@ class CheckoutsController < ApplicationController
       end
       order.log_event!("placed", "Order placed")
     end
+  end
+
+  # Clamped to what the account actually has and what the order can absorb —
+  # never trust the checkbox's own dollar amount.
+  def credit_to_apply(cart)
+    return 0 unless current_user && ActiveModel::Type::Boolean.new.cast(params[:apply_credit])
+
+    [current_user.store_credit_cents, cart.subtotal_cents].min
   end
 
   def capture_shipping(order, stripe_session)

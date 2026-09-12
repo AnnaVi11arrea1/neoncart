@@ -7,13 +7,14 @@
       <%= nav_link "Shop", products_path %>
       <%= nav_link "Gallery", gallery_path %>
       <%= nav_link "Track order", order_lookup_path %>
+      <%= nav_link "Leave a review", verify_reviews_path %>
       <% if preview_mode? %>
         <%= nav_link "Support", new_ticket_path %>
         <span class="hint">Preview mode</span>
       <% else %>
         <%= nav_link "Support", user_signed_in? ? tickets_path : new_ticket_path %>
         <% if user_signed_in? %>
-          <%= nav_link "My orders", orders_path %>
+          <%= nav_link "My account", account_path %>
           <% if current_user.admin? %><%= nav_link "Admin", admin_root_path %><% end %>
           <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "linklike" %>
         <% else %>

@@ -474,3 +474,26 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
 .review-card__name { font-weight: 600; color: var(--ink); font-size: 14px; }
 .review-card__meta { color: var(--muted); font-size: 12px; }
 .reviews__cta { text-align: center; margin: 22px 0 0; font-size: 14px; }
+
+/* Product reviews (verified purchase) — reuses .review-card above */
+.product-reviews__summary { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; color: var(--muted); font-size: 14px; }
+.product-reviews__summary .review-card__stars { font-size: 16px; }
+.review-card__photos { display: flex; gap: 8px; margin-top: 4px; }
+.review-card__photo {
+  width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-bright); cursor: zoom-in;
+}
+.favorite-toggle { border: 1px solid var(--border-bright); background: var(--bg-panel); color: var(--ink); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 14px; cursor: pointer; }
+.favorite-toggle.is-favorited { color: var(--magenta); border-color: var(--magenta); }
+
+/* Lightbox for review photos — data-controller="lightbox" */
+.lightbox-overlay {
+  position: fixed; inset: 0; background: rgba(8,6,20,0.88); display: flex;
+  align-items: center; justify-content: center; z-index: 100; cursor: zoom-out;
+}
+.lightbox-overlay img { max-width: 92vw; max-height: 92vh; border-radius: var(--radius-sm); }
+
+/* Account hub */
+.account-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+@media (max-width: 780px) { .account-grid { grid-template-columns: 1fr; } }
+.credit-balance { font-size: 28px; font-weight: 700; color: var(--lume); margin: 0 0 6px; }

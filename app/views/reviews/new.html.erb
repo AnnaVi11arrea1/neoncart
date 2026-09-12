@@ -1,0 +1,33 @@
+<% content_for :title, "Review #{@order_item.title} · #{store_name}" %>
+<div class="narrow">
+  <h1>Review <%= @order_item.title %></h1>
+  <%= form_with model: @review, url: order_item_review_path(@order_item), method: :post, class: "stack", local: true, html: { multipart: true } do |f| %>
+    <% if @review.errors.any? %>
+      <div class="empty"><p><%= @review.errors.full_messages.to_sentence %></p></div>
+    <% end %>
+    <%= hidden_field_tag :guest_token, params[:guest_token] if params[:guest_token].present? %>
+
+    <label class="field">
+      <span>Your name</span>
+      <%= f.text_field :reviewer_name, required: true, value: @review.reviewer_name.presence || current_user&.display_name %>
+    </label>
+    <label class="field">
+      <span>Rating</span>
+      <%= f.select :rating, (1..5).to_a.reverse.map { |n| ["#{n} star#{'s' unless n == 1}", n] }, { prompt: "Choose a rating" }, required: true %>
+    </label>
+    <label class="field">
+      <span>Title (optional)</span>
+      <%= f.text_field :title %>
+    </label>
+    <label class="field">
+      <span>Review</span>
+      <%= f.text_area :body, rows: 5, required: true %>
+    </label>
+    <label class="field">
+      <span>Photos (optional, up to 2)</span>
+      <%= f.file_field :photos, multiple: true, accept: "image/*" %>
+    </label>
+    <p class="hint">Reviews are checked by hand before they go live, usually within a day or two.</p>
+    <%= f.submit "Submit review", class: "btn btn--primary" %>
+  <% end %>
+</div>

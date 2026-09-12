@@ -71,6 +71,8 @@ class ProductsController < ApplicationController
     # nothing to pick from — sell it and the order arrives with no size.
     @sold_out = @variants.empty? && @product.variants.exists?
     @related = Product.storefront.with_card_images.where(category_id: @product.category_id).where.not(id: @product.id).limit(4)
+    @reviews = @product.reviews.visible.includes(:user, photos_attachments: :blob).order(created_at: :desc)
+    @favorite = current_user.favorites.find_by(product_id: @product.id) if user_signed_in?
   rescue ActiveRecord::ConnectionNotEstablished, PG::ConnectionBad
     @product = preview_products.find { |p| p.slug == params[:slug] }
     raise ActiveRecord::RecordNotFound unless @product

@@ -21,6 +21,18 @@ Rails.application.routes.draw do
   get "track", to: "orders#lookup", as: :order_lookup
   post "track", to: "orders#find"
 
+  # Product reviews — verified purchase only. Signed-in buyers jump straight
+  # to new/create from their orders; guests prove purchase via order number +
+  # email first (mirrors /track above), then get a signed link per item.
+  get  "reviews/verify", to: "reviews#verify",  as: :verify_reviews
+  post "reviews/verify", to: "reviews#locate",  as: :locate_reviews
+  resources :order_items, only: [] do
+    resource :review, only: %i[new create], controller: "reviews"
+  end
+
+  resources :favorites, only: %i[create destroy]
+  resource :account, only: :show, controller: "account"
+
   # Support tickets
   resources :tickets, only: %i[index new create show], param: :token do
     resources :messages, only: :create, controller: "ticket_messages"
@@ -68,6 +80,12 @@ Rails.application.routes.draw do
       end
     end
     resources :paintings, param: :slug
+    resources :reviews, only: %i[index] do
+      member do
+        post :approve
+        post :reject
+      end
+    end
     resources :api_keys, only: %i[index create destroy]
     resources :webhook_endpoints, only: %i[index create update destroy]
 

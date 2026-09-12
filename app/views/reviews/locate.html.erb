@@ -1,0 +1,16 @@
+<% content_for :title, "Leave a review · #{store_name}" %>
+<div class="narrow">
+  <h1>Order <span class="order-number mono"><%= @order.number %></span></h1>
+  <% if @reviewable_items.any? %>
+    <p class="hint">Pick an item to review. The link below is valid for 30 minutes.</p>
+    <ul class="stack">
+      <% @reviewable_items.each do |item| %>
+        <li>
+          <%= link_to item.title, new_order_item_review_path(item, guest_token: guest_review_token(item)), class: "btn btn--sm" %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="hint">Everything in this order has already been reviewed — thank you!</p>
+  <% end %>
+</div>

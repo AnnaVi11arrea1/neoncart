@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_12_154828) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -94,6 +94,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_categories_on_slug", unique: true
+  end
+
+  create_table "favorites", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "product_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_favorites_on_product_id"
+    t.index ["user_id", "product_id"], name: "index_favorites_on_user_id_and_product_id", unique: true
+    t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -233,6 +243,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
     t.datetime "placed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "credit_applied_cents", default: 0, null: false
     t.index ["api_key_id"], name: "index_orders_on_api_key_id"
     t.index ["number"], name: "index_orders_on_number", unique: true
     t.index ["status"], name: "index_orders_on_status"
@@ -290,6 +301,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
     t.index ["tags"], name: "index_products_on_tags", using: :gin
   end
 
+  create_table "reviews", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "order_item_id", null: false
+    t.bigint "user_id"
+    t.string "reviewer_name", null: false
+    t.string "guest_email"
+    t.integer "rating", null: false
+    t.string "title"
+    t.text "body", null: false
+    t.string "status", default: "pending", null: false
+    t.string "rejection_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_item_id"], name: "index_reviews_on_order_item_id", unique: true
+    t.index ["product_id"], name: "index_reviews_on_product_id"
+    t.index ["status"], name: "index_reviews_on_status"
+    t.index ["user_id"], name: "index_reviews_on_user_id"
+  end
+
   create_table "shipments", force: :cascade do |t|
     t.bigint "order_id", null: false
     t.bigint "supplier_id"
@@ -305,6 +335,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
     t.index ["order_id", "tracking_number"], name: "index_shipments_on_order_id_and_tracking_number", unique: true, where: "(tracking_number IS NOT NULL)"
     t.index ["order_id"], name: "index_shipments_on_order_id"
     t.index ["supplier_id"], name: "index_shipments_on_supplier_id"
+  end
+
+  create_table "store_credit_transactions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "order_id"
+    t.integer "amount_cents", null: false
+    t.string "kind", null: false
+    t.string "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_store_credit_transactions_on_order_id"
+    t.index ["user_id"], name: "index_store_credit_transactions_on_user_id"
   end
 
   create_table "suppliers", force: :cascade do |t|
@@ -366,6 +408,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
     t.datetime "updated_at", null: false
     t.string "provider"
     t.string "uid"
+    t.integer "store_credit_cents", default: 0, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["provider", "uid"], name: "index_users_on_provider_and_uid", unique: true, where: "(provider IS NOT NULL)"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -416,6 +459,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_items", "variants"
   add_foreign_key "carts", "users"
+  add_foreign_key "favorites", "products"
+  add_foreign_key "favorites", "users"
   add_foreign_key "order_events", "orders"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
@@ -425,8 +470,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_214211) do
   add_foreign_key "product_images", "products"
   add_foreign_key "products", "categories"
   add_foreign_key "products", "suppliers"
+  add_foreign_key "reviews", "order_items"
+  add_foreign_key "reviews", "products"
+  add_foreign_key "reviews", "users"
   add_foreign_key "shipments", "orders"
   add_foreign_key "shipments", "suppliers"
+  add_foreign_key "store_credit_transactions", "orders"
+  add_foreign_key "store_credit_transactions", "users"
   add_foreign_key "ticket_messages", "tickets"
   add_foreign_key "ticket_messages", "users"
   add_foreign_key "tickets", "orders"

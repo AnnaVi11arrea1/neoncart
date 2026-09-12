@@ -38,9 +38,15 @@
     <div class="cart__summary">
       <p class="cart__subtotal">Subtotal <strong class="mono"><%= format_money(@cart.subtotal_cents) %></strong></p>
       <p class="hint">Shipping and tax calculated at checkout. Pay by card, Google Pay, or Apple Pay.</p>
-      <%= button_to "Checkout →", checkout_path, method: :post,
-            form: { id: "checkout-form" },
-            data: { turbo: false }, class: "btn btn--primary btn--lg btn--wide" %>
+      <% if user_signed_in? && current_user.store_credit_cents.positive? %>
+        <label class="check">
+          <%= check_box_tag "apply_credit", "1", true, form: "checkout-form" %>
+          Apply <%= format_money([current_user.store_credit_cents, @cart.subtotal_cents].min) %> store credit
+        </label>
+      <% end %>
+      <%= form_with url: checkout_path, method: :post, html: { id: "checkout-form", data: { turbo: false } } do %>
+        <%= submit_tag "Checkout →", class: "btn btn--primary btn--lg btn--wide" %>
+      <% end %>
       <%# begin_checkout fires on submit rather than on cart view, so it counts
           intent to pay and not just window shopping. gtag uses sendBeacon, so
           it still goes out as the browser leaves for Stripe. %>

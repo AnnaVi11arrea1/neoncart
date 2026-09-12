@@ -1,0 +1,49 @@
+<% content_for :title, "Reviews" %>
+<div class="page-head">
+  <h1>Reviews</h1>
+  <div class="filter-row">
+    <% Review.statuses.keys.each do |s| %>
+      <%= link_to s.humanize, admin_reviews_path(status: s), class: "chip #{'chip--on' if (params[:status].presence || 'pending') == s}" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @reviews.any? %>
+  <div class="stack">
+    <% @reviews.each do |review| %>
+      <div class="panel">
+        <div class="page-head">
+          <div>
+            <span class="review-card__stars" aria-hidden="true"><%= "★" * review.rating %><%= "☆" * (5 - review.rating) %></span>
+            <strong><%= review.title.presence || review.product.title %></strong>
+            <span class="hint">on <%= link_to review.product.title, product_path(review.product.slug), target: "_blank" %></span>
+          </div>
+          <%= status_chip(review.status) %>
+        </div>
+        <p><%= review.body %></p>
+        <p class="hint"><%= review.reviewer_name %><%= " (verified buyer)" if review.user %> · <%= review.created_at.strftime("%b %-d, %Y") %></p>
+        <% if review.photos.attached? %>
+          <div class="review-card__photos">
+            <% review.photos.each do |photo| %>
+              <%= image_tag photo, class: "review-card__photo" %>
+            <% end %>
+          </div>
+        <% end %>
+        <% if review.rejection_reason.present? %>
+          <p class="hint">Rejected: <%= review.rejection_reason %></p>
+        <% end %>
+        <div class="btn-row">
+          <% unless review.approved? %>
+            <%= button_to "Approve", approve_admin_review_path(review, status: params[:status]), method: :post, class: "btn btn--sm" %>
+          <% end %>
+          <% unless review.rejected? %>
+            <%= button_to "Reject", reject_admin_review_path(review, status: params[:status]), method: :post, class: "btn btn--sm btn--danger" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty"><p>No reviews here.</p></div>
+<% end %>
+<%= render "shared/pagination", pagy: @pagy %>

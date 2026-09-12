@@ -3,7 +3,7 @@ module Payments
   # card, Google Pay, Apple Pay, Link, Cash App Pay etc. automatically —
   # enable/disable wallets in the Stripe Dashboard, no code changes needed.
   class StripeCheckout
-    def self.session_for(order, success_url:, cancel_url:)
+    def self.session_for(order, success_url:, cancel_url:, credit_cents: 0)
       Stripe::Checkout::Session.create(
         mode: "payment",
         client_reference_id: order.number,
@@ -26,11 +26,21 @@ module Payments
         },
         shipping_options: shipping_options,
         automatic_tax: { enabled: stripe_tax_enabled? },
+        **discount_params(order, credit_cents),
         phone_number_collection: { enabled: true },
         metadata: { order_number: order.number },
         success_url: "#{success_url}?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: cancel_url
       )
+    end
+
+    # Store credit redemption, as a one-time Stripe coupon — there's no
+    # Stripe Price catalog here to attach a discount to otherwise.
+    def self.discount_params(order, credit_cents)
+      return {} unless credit_cents.to_i.positive?
+
+      coupon = Stripe::Coupon.create(amount_off: credit_cents.to_i, currency: order.currency, duration: "once")
+      { discounts: [{ coupon: coupon.id }] }
     end
 
     def self.shipping_options

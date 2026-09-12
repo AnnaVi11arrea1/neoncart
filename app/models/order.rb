@@ -4,6 +4,12 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   has_many :shipments, dependent: :destroy
   has_many :order_events, -> { order(created_at: :asc) }, dependent: :destroy
+  has_many :store_credit_transactions, dependent: :nullify
+
+  # $5 credit per $50 spent, per order (not cumulative remainder across
+  # orders) — a $95 order earns $5, a $150 order earns $15.
+  CREDIT_EARN_THRESHOLD_CENTS = 5000
+  CREDIT_EARN_AMOUNT_CENTS = 500
 
   enum :status, {
     pending: "pending",       # created, awaiting payment
@@ -41,6 +47,7 @@ class Order < ApplicationRecord
             placed_at: placed_at || Time.current,
             stripe_payment_intent_id: payment_intent_id || stripe_payment_intent_id,
             stripe_session_id: session_id || stripe_session_id)
+    apply_store_credit!
     log_event!("paid", "Payment confirmed")
     OrderMailer.confirmation(self).deliver_later
     Webhooks::Dispatcher.publish("order.paid", webhook_payload)
@@ -120,6 +127,19 @@ class Order < ApplicationRecord
   end
 
   private
+
+  # Redeems whatever credit was applied at checkout, then earns fresh credit
+  # on the subtotal. Guests (no user) can't redeem or earn — that's part of
+  # the incentive to create an account. Runs once, from mark_paid!, so an
+  # abandoned/pending order never touches a balance.
+  def apply_store_credit!
+    return unless user
+
+    user.add_credit!(-credit_applied_cents, order: self, kind: "redeemed") if credit_applied_cents.positive?
+
+    earned = (subtotal_cents / CREDIT_EARN_THRESHOLD_CENTS) * CREDIT_EARN_AMOUNT_CENTS
+    user.add_credit!(earned, order: self, kind: "earned") if earned.positive?
+  end
 
   def assign_number
     self.number ||= loop do

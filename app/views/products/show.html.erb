@@ -74,6 +74,25 @@
     <h1><%= @product.title %></h1>
     <p class="product-page__price"><%= format_money(@product.price_cents) %></p>
 
+    <% if @product.reviews_count.positive? %>
+      <p class="product-reviews__summary">
+        <span class="review-card__stars" aria-hidden="true"><%= "★" * @product.average_rating.round %><%= "☆" * (5 - @product.average_rating.round) %></span>
+        <%= @product.average_rating %> (<%= pluralize(@product.reviews_count, "review") %>)
+      </p>
+    <% end %>
+
+    <% unless preview_mode? %>
+      <% if user_signed_in? %>
+        <% if @favorite %>
+          <%= button_to "♥ Saved", favorite_path(@favorite), method: :delete, class: "favorite-toggle is-favorited" %>
+        <% else %>
+          <%= button_to "♡ Save to favorites", favorites_path(product_id: @product.id), method: :post, class: "favorite-toggle" %>
+        <% end %>
+      <% else %>
+        <p class="hint"><%= link_to "Sign in", new_user_session_path %> to save favorites.</p>
+      <% end %>
+    <% end %>
+
     <% if preview_mode? %>
       <p class="hint">Preview mode: checkout is disabled until a database is configured.</p>
     <% else %>
@@ -111,6 +130,32 @@
     <% end %>
   </div>
 </article>
+
+<% if @reviews.present? && @reviews.any? %>
+  <section class="section">
+    <h2 class="section__title">Reviews</h2>
+    <div class="reviews__grid" data-controller="lightbox">
+      <% @reviews.each do |review| %>
+        <blockquote class="review-card">
+          <div class="review-card__stars" aria-hidden="true"><%= "★" * review.rating %><%= "☆" * (5 - review.rating) %></div>
+          <p class="review-card__text"><%= review.title.presence %><%= " — " if review.title.present? %><%= review.body %></p>
+          <% if review.photos.attached? %>
+            <div class="review-card__photos">
+              <% review.photos.each do |photo| %>
+                <%= image_tag photo.variant(resize_to_limit: [200, 200]), class: "review-card__photo",
+                      data: { lightbox_target: "thumb", action: "lightbox#open", full: rails_blob_path(photo, only_path: true) } %>
+              <% end %>
+            </div>
+          <% end %>
+          <footer class="review-card__author">
+            <span class="review-card__name"><%= review.reviewer_name %></span>
+            <span class="review-card__meta">Verified buyer &middot; <%= review.created_at.strftime("%B %Y") %></span>
+          </footer>
+        </blockquote>
+      <% end %>
+    </div>
+  </section>
+<% end %>
 
 <% if @related.any? %>
   <section class="section">

@@ -1,0 +1,13 @@
+<% content_for :title, "Leave a review · #{store_name}" %>
+<div class="narrow">
+  <h1>Leave a review</h1>
+  <p class="hint">Enter the order number from your confirmation email (looks like <span class="mono">EF-2607-A1B2C3</span>) to review something you bought.</p>
+  <%= form_with url: locate_reviews_path, method: :post, class: "stack" do |f| %>
+    <label class="field"><span>Order number</span><%= f.text_field :number, required: true, class: "mono" %></label>
+    <label class="field"><span>Email used at checkout</span><%= f.email_field :email, required: true %></label>
+    <%= f.submit "Find my order", class: "btn btn--primary" %>
+  <% end %>
+  <% if user_signed_in? %>
+    <p class="hint">Signed in already? <%= link_to "Review from your orders", orders_path %> instead — no lookup needed.</p>
+  <% end %>
+</div>

@@ -2,7 +2,7 @@ class OrdersController < ApplicationController
   def index
     redirect_to(new_user_session_path, alert: "Sign in to see your orders.") && return unless user_signed_in?
 
-    @orders = current_user.orders.recent
+    @orders = current_user.orders.recent.includes(order_items: %i[review product])
   end
 
   def show
