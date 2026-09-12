@@ -26,6 +26,7 @@ class CheckoutsController < ApplicationController
       end
     end
     if @order && !@order.pending?
+      @order_items = @order.order_items.includes(:variant, product: :category)
       session[:order_access] = @order.number
       session.delete(:cart_token)
     end
@@ -65,6 +66,7 @@ class CheckoutsController < ApplicationController
         "postal_code" => addr&.postal_code, "country" => addr&.country
       }.compact,
       shipping_cents: stripe_session.try(:shipping_cost)&.try(:amount_total).to_i,
+      tax_cents: stripe_session.try(:total_details)&.try(:amount_tax).to_i,
       total_cents: stripe_session.amount_total.to_i
     )
   end

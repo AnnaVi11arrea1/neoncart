@@ -42,6 +42,7 @@ module Webhooks
           "postal_code" => addr&.postal_code, "country" => addr&.country
         }.compact,
         shipping_cents: session.try(:shipping_cost)&.try(:amount_total).to_i,
+        tax_cents: session.try(:total_details)&.try(:amount_tax).to_i,
         total_cents: session.amount_total.to_i
       )
     end

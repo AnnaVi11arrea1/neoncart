@@ -28,7 +28,10 @@
       <p class="hint"><%= [a["line1"], a["line2"], a["city"], a["state"], a["postal_code"], a["country"]].compact_blank.join(", ") %><br>
       <%= a["phone"] %></p>
     <% end %>
-    <p class="mono">Total <%= format_money(@order.total_cents) %> (ship <%= format_money(@order.shipping_cents) %>)</p>
+    <p class="mono">
+      Total <%= format_money(@order.total_cents) %>
+      (ship <%= format_money(@order.shipping_cents) %><%= ", tax #{format_money(@order.tax_cents)}" if @order.tax_cents.positive? %>)
+    </p>
     <% if @order.stripe_payment_intent_id %>
       <p class="hint">Stripe PI: <%= link_to @order.stripe_payment_intent_id, "https://dashboard.stripe.com/payments/#{@order.stripe_payment_intent_id}", target: "_blank", class: "mono" %></p>
     <% end %>

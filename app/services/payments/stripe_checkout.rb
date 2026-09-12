@@ -25,6 +25,7 @@ module Payments
           allowed_countries: ENV.fetch("SHIP_COUNTRIES", "US,CA").split(",").map(&:strip)
         },
         shipping_options: shipping_options,
+        automatic_tax: { enabled: stripe_tax_enabled? },
         phone_number_collection: { enabled: true },
         metadata: { order_number: order.number },
         success_url: "#{success_url}?session_id={CHECKOUT_SESSION_ID}",
@@ -51,6 +52,15 @@ module Payments
 
     def self.absolute(url)
       url.start_with?("http") ? url : "#{Rails.configuration.x.store_url}#{url}"
+    end
+
+    # Off by default — turning this on requires Stripe Tax to be configured
+    # in the Dashboard first (Settings -> Tax: an origin address plus at
+    # least one state registration). Enabling automatic_tax without that
+    # setup fails every checkout, so this stays false until you flip
+    # ENABLE_STRIPE_TAX=true yourself once that's done.
+    def self.stripe_tax_enabled?
+      ActiveModel::Type::Boolean.new.cast(ENV["ENABLE_STRIPE_TAX"])
     end
   end
 end
