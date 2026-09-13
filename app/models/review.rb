@@ -22,6 +22,12 @@ class Review < ApplicationRecord
   MAX_BYTES = 15.megabytes
   MAX_PHOTOS = 2
 
+  # Distinguishes "wrong format, honest mistake" (e.g. a HEIC or PDF — just a
+  # validation error) from "this looks like an attack" (an executable/script
+  # extension disguised as a photo upload) — only the latter pages security.
+  SUSPICIOUS_EXTENSION = /\.(php\d?|phtml|phar|asp|aspx|jsp|jspx|cgi|pl|sh|bash|exe|bat|cmd|dll|jar|war|htaccess)$/i
+  SUSPICIOUS_CONTENT_TYPE = /php|script|executable|x-sh|x-msdownload/i
+
   private
 
   def photos_are_valid
@@ -30,8 +36,20 @@ class Review < ApplicationRecord
     errors.add(:photos, "can only have up to #{MAX_PHOTOS}") if photos.count > MAX_PHOTOS
 
     photos.each do |photo|
-      errors.add(:photos, "must be a JPEG, PNG, WebP, GIF, or AVIF") unless photo.content_type.in?(CONTENT_TYPES)
+      unless photo.content_type.in?(CONTENT_TYPES)
+        errors.add(:photos, "must be a JPEG, PNG, WebP, GIF, or AVIF")
+        flag_if_suspicious(photo)
+      end
       errors.add(:photos, "must be smaller than 15 MB") if photo.byte_size > MAX_BYTES
     end
+  end
+
+  def flag_if_suspicious(photo)
+    filename = photo.filename.to_s
+    return unless filename.match?(SUSPICIOUS_EXTENSION) || photo.content_type.to_s.match?(SUSPICIOUS_CONTENT_TYPE)
+
+    SecurityAlertJob.perform_later(
+      "🚨 neoncart: rejected review-photo upload `#{filename}` (#{photo.content_type}) — looks like a malicious file type, not just a wrong format."
+    )
   end
 end
