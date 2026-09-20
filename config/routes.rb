@@ -47,6 +47,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :products, only: %i[index show], param: :slug
+      resources :paintings, only: %i[index show], param: :slug
       resources :orders, only: %i[create show], param: :number
       get "ping", to: "base#ping"
     end

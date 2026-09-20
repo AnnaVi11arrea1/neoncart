@@ -23,6 +23,14 @@ class Painting < ApplicationRecord
   def thumb  = image.variant(resize_to_limit: [800, 800]).processed
   def large  = image.variant(resize_to_limit: [1800, 1800]).processed
 
+  # The original, not a variant: consumers outside the site (the CMS) do their
+  # own resizing and want the full-quality file, not one sized for our grid.
+  def image_url
+    return nil unless image.attached?
+
+    Rails.application.routes.url_helpers.rails_blob_path(image, only_path: true)
+  end
+
   def caption_line
     [medium, dimensions, year].compact_blank.join(" · ")
   end

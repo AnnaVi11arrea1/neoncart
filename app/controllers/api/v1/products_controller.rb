@@ -20,7 +20,7 @@ module Api
 
       def serialize(p, full: false)
         base = {
-          slug: p.slug, title: p.title, price_cents: p.price_cents,
+          id: p.id, slug: p.slug, title: p.title, price_cents: p.price_cents,
           currency: p.currency, category: p.category&.slug, tags: p.tags,
           image_urls: p.all_image_urls,
           url: Rails.configuration.x.store_url + "/products/#{p.slug}"
