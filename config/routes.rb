@@ -56,7 +56,10 @@ Rails.application.routes.draw do
   namespace :admin do
     root "dashboard#index"
     resources :products do
-      member { post :archive }
+      member do
+        post :archive
+        delete :remove_video
+      end
       resources :photos, only: :destroy, controller: "product_photos"
     end
     resources :orders, only: %i[index show] do

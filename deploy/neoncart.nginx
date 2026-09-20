@@ -24,7 +24,12 @@ server {
   server_name www.everfluorescent.com;
 
   root /home/anna/neoncart/public;
-  client_max_body_size 20M;
+  # 20M covered images fine but rejected video uploads outright (nginx 413,
+  # which Cloudflare's tunnel then surfaced as a confusing "Worker threw
+  # exception" error instead of a clean 413) — raised for the product video
+  # upload feature. 150M covers a few minutes of phone-shot product footage;
+  # revisit if that's ever not enough.
+  client_max_body_size 150M;
 
   # Real client IP comes from the tunnel, not the loopback peer.
   set $client_ip $remote_addr;

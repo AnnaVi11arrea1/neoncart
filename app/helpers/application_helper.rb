@@ -16,6 +16,24 @@ module ApplicationHelper
     tag.span(status.to_s.humanize, class: "chip chip--#{status}")
   end
 
+  # Renders one product-gallery slide — see Product#gallery_items. Only used
+  # for the first (server-rendered) slide; gallery_controller.js builds the
+  # rest client-side using the same type/url/alt data via data attributes.
+  def gallery_media_tag(item)
+    case item[:type]
+    when "video-file"
+      video_tag(item[:url], controls: true, playsinline: true, class: "product-page__video")
+    when "video-embed"
+      tag.iframe(src: item[:url], class: "product-page__video-embed",
+                 allow: "autoplay; encrypted-media; picture-in-picture", allowfullscreen: true, frameborder: 0)
+    when "video-link"
+      link_to "▶ Watch on #{item[:alt]}", item[:url], target: "_blank", rel: "noopener",
+              class: "product-page__video-link"
+    else
+      image_tag item[:url], alt: item[:alt], class: "product-page__main-img"
+    end
+  end
+
   def nav_link(name, path, **opts)
     active = current_page?(path) || (path != root_path && request.path.start_with?(path))
     link_to name, path, **opts, class: "#{opts[:class]} #{'is-active' if active}".strip

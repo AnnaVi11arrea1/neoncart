@@ -1,6 +1,6 @@
 module Admin
   class ProductsController < BaseController
-    before_action :set_product, only: %i[edit update destroy archive]
+    before_action :set_product, only: %i[edit update destroy archive remove_video]
 
     def index
       scope = Product.includes(:supplier, :category).order(updated_at: :desc)
@@ -18,6 +18,7 @@ module Admin
       @product = Product.new(product_params)
       if @product.save
         @product.images.attach(new_image_uploads)
+        @product.video.attach(new_video_upload) if new_video_upload
         redirect_to edit_admin_product_path(@product), notice: "Product created."
       else
         render :new, status: :unprocessable_entity
@@ -29,6 +30,7 @@ module Admin
     def update
       if @product.update(product_params)
         @product.images.attach(new_image_uploads)
+        @product.video.attach(new_video_upload) if new_video_upload
         redirect_to edit_admin_product_path(@product), notice: "Saved."
       else
         render :edit, status: :unprocessable_entity
@@ -38,6 +40,12 @@ module Admin
     def archive
       @product.archived!
       redirect_to admin_products_path, notice: "Archived."
+    end
+
+    def remove_video
+      @product.video.purge
+      @product.update!(video_url: nil)
+      redirect_to edit_admin_product_path(@product), notice: "Video removed."
     end
 
     def destroy
@@ -61,10 +69,18 @@ module Admin
       Array(params.dig(:product, :images)).select { |f| f.respond_to?(:original_filename) }
     end
 
+    # Same reasoning as images: has_one_attached= purges the attachment when
+    # assigned a blank value, which is exactly what a plain file_field submits
+    # when the admin isn't replacing the video. Only ever attach a real file.
+    def new_video_upload
+      file = params.dig(:product, :video)
+      file if file.respond_to?(:original_filename)
+    end
+
     def product_params
       permitted = params.require(:product).permit(
         :title, :description, :category_id, :status, :featured, :primary_image_id,
-        :price_dollars, :compare_at_dollars, :tag_list,
+        :price_dollars, :compare_at_dollars, :tag_list, :video_url,
         variants_attributes: %i[id title sku price_dollars available _destroy]
       )
       translate_money!(permitted)
@@ -77,7 +93,8 @@ module Admin
       p[:tags] = p.delete(:tag_list).to_s.split(",").map { |t| t.strip.downcase }.reject(&:empty?) if p.key?(:tag_list)
       if p[:variants_attributes].is_a?(ActionController::Parameters)
         p[:variants_attributes].each_value do |v|
-          v[:price_cents] = (v.delete(:price_dollars).to_f * 100).round if v[:price_dollars].present?
+          dollars = v.delete(:price_dollars)
+          v[:price_cents] = (dollars.to_f * 100).round if dollars.present?
         end
       end
     end

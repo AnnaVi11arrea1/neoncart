@@ -34,6 +34,18 @@
     </div>
   <% end %>
 
+  <label class="field"><span>Video (upload)</span><%= f.file_field :video, accept: "video/*" %></label>
+  <label class="field"><span>Or video link (YouTube gets an inline player; TikTok/Instagram show a "watch on…" link)</span>
+    <%= f.text_field :video_url, placeholder: "https://..." %></label>
+  <% if product.video.attached? %>
+    <p class="hint">Current: <%= link_to "view uploaded video", rails_blob_path(product.video, only_path: true), target: "_blank" %>
+      · <%= link_to "remove", remove_video_admin_product_path(product), data: { turbo_method: :delete, turbo_confirm: "Remove this product's video?" } %>
+      — upload a new file to replace it.</p>
+  <% elsif product.video_url.present? %>
+    <p class="hint">Current link: <%= link_to product.video_url, product.video_url, target: "_blank" %>
+      · <%= link_to "remove", remove_video_admin_product_path(product), data: { turbo_method: :delete, turbo_confirm: "Remove this product's video?" } %></p>
+  <% end %>
+
   <h2>Variants</h2>
   <div class="stack">
     <%= f.fields_for :variants do |vf| %>

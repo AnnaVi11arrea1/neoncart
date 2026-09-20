@@ -42,23 +42,28 @@
 
 <article class="product-page">
   <div class="product-page__gallery">
-    <% gallery = @product.respond_to?(:gallery_images) ? @product.gallery_images : @product.all_image_urls.map { |u| { url: u, alt: @product.title } } %>
+    <% gallery = @product.respond_to?(:gallery_items) ? @product.gallery_items : @product.all_image_urls.map { |u| { url: u, alt: @product.title, type: "image" } } %>
     <% if gallery.any? %>
       <div class="product-page__main-wrap" data-controller="gallery">
         <% if gallery.size > 1 %>
-          <button type="button" class="gallery-arrow gallery-arrow--prev" data-action="gallery#prev" aria-label="Previous image">‹</button>
+          <button type="button" class="gallery-arrow gallery-arrow--prev" data-action="gallery#prev" aria-label="Previous item">‹</button>
         <% end %>
-        <img class="product-page__main" data-gallery-target="main" src="<%= gallery.first[:url] %>" alt="<%= gallery.first[:alt] %>">
+        <div class="product-page__main" data-gallery-target="main"><%= gallery_media_tag(gallery.first) %></div>
         <% if gallery.size > 1 %>
-          <button type="button" class="gallery-arrow gallery-arrow--next" data-action="gallery#next" aria-label="Next image">›</button>
+          <button type="button" class="gallery-arrow gallery-arrow--next" data-action="gallery#next" aria-label="Next item">›</button>
         <% end %>
         <% if gallery.size > 1 %>
           <div class="product-page__thumbs">
-            <% gallery.each_with_index do |img, i| %>
+            <% gallery.each_with_index do |item, i| %>
               <button type="button" class="product-page__thumb <%= "is-active" if i.zero? %>"
                       data-gallery-target="thumb" data-action="gallery#select" data-gallery-index-param="<%= i %>"
-                      data-url="<%= img[:url] %>" data-alt="<%= img[:alt] %>" aria-label="Show image <%= i + 1 %>">
-                <img src="<%= img[:url] %>" alt="<%= img[:alt] %>" loading="lazy">
+                      data-type="<%= item[:type] %>" data-url="<%= item[:url] %>" data-alt="<%= item[:alt] %>"
+                      aria-label="Show item <%= i + 1 %>">
+                <% if item[:type] == "image" %>
+                  <img src="<%= item[:url] %>" alt="<%= item[:alt] %>" loading="lazy">
+                <% else %>
+                  <span class="product-page__thumb-video">▶</span>
+                <% end %>
               </button>
             <% end %>
           </div>

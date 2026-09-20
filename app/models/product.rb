@@ -6,7 +6,10 @@ class Product < ApplicationRecord
   has_many :reviews, dependent: :nullify
   has_many :favorites, dependent: :destroy
   has_many_attached :images
+  has_one_attached :video
   has_rich_text :description
+
+  YOUTUBE_ID_RE = %r{(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([\w-]{11})}
 
   accepts_nested_attributes_for :variants, allow_destroy: true, reject_if: :all_blank
 
@@ -102,6 +105,43 @@ class Product < ApplicationRecord
   def gallery_images
     items = ordered_images.map { |i| { url: Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true), alt: i.metadata["alt"].presence || title } }
     items + product_images.filter_map { |pi| { url: pi.remote_url, alt: title } if pi.remote_url.present? }
+  end
+
+  # A YouTube link gets a real inline embed (their iframe API is simple and
+  # doesn't need an external script). TikTok/Instagram/anything else only
+  # offer oEmbed widgets that need loading their own JS on every product
+  # page just to show one video — not worth it for a first pass, so those
+  # just link out to "Watch on <platform>" instead of a fake broken embed.
+  def video_embed_url
+    return nil if video_url.blank?
+
+    match = YOUTUBE_ID_RE.match(video_url)
+    "https://www.youtube-nocookie.com/embed/#{match[1]}" if match
+  end
+
+  def video_platform_label
+    case video_url
+    when nil, "" then nil
+    when /youtube\.com|youtu\.be/ then "YouTube"
+    when /tiktok\.com/ then "TikTok"
+    when /instagram\.com/ then "Instagram"
+    else "video"
+    end
+  end
+
+  # The gallery's first slide is the video (if any), everything else is
+  # photos — matches the common "video first" convention on most storefronts,
+  # and gives the product page's most attention-grabbing asset top billing.
+  def gallery_items
+    video_item = if video.attached?
+      { type: "video-file", url: Rails.application.routes.url_helpers.rails_blob_path(video, only_path: true), alt: "#{title} video" }
+    elsif video_embed_url
+      { type: "video-embed", url: video_embed_url, alt: "#{title} video" }
+    elsif video_url.present?
+      { type: "video-link", url: video_url, alt: video_platform_label }
+    end
+
+    [video_item, *gallery_images.map { |g| g.merge(type: "image") }].compact
   end
 
   private
