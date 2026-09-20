@@ -43,14 +43,16 @@
       <%= button_to "Cancel order", cancel_admin_order_path(@order), method: :post, class: "btn btn--sm btn--danger", data: { turbo_confirm: "Cancel #{@order.number}?" } %>
     </div>
 
-    <h2>Add tracking manually</h2>
+    <h2>Add tracking / update link</h2>
     <%= form_with url: admin_order_shipments_path(@order), method: :post, class: "stack" do |f| %>
       <div class="field-row">
-        <label class="field"><span>Carrier</span><%= f.text_field "shipment[carrier]", placeholder: "USPS" %></label>
-        <label class="field"><span>Tracking number</span><%= f.text_field "shipment[tracking_number]", required: true, class: "mono" %></label>
+        <label class="field"><span>Carrier (optional)</span><%= f.text_field "shipment[carrier]", placeholder: "USPS" %></label>
+        <label class="field"><span>Tracking number (optional)</span><%= f.text_field "shipment[tracking_number]", class: "mono" %></label>
       </div>
+      <label class="field"><span>Update link</span><%= f.text_field "shipment[tracking_url]", placeholder: "https://... a status page or tracking link the customer can follow", class: "mono" %></label>
+      <p class="hint">Fill in a tracking number for standard carriers, or just paste a link for overseas/irregular shipments — either way the customer gets emailed.</p>
       <label class="check"><%= check_box_tag :fulfill_manual, "1", true %> <span>Mark manual items fulfilled</span></label>
-      <%= f.submit "Add tracking + notify customer", class: "btn btn--primary btn--sm" %>
+      <%= f.submit "Send update to customer", class: "btn btn--primary btn--sm" %>
     <% end %>
   </section>
 
@@ -59,7 +61,7 @@
     <% if @order.shipments.any? %>
       <ul class="shipments">
         <% @order.shipments.each do |s| %>
-          <li><span class="chip chip--<%= s.status %>"><%= s.status %></span> <%= s.display_carrier %> <%= link_to s.tracking_number, s.tracking_url.to_s, target: "_blank", class: "mono" %></li>
+          <li><span class="chip chip--<%= s.status %>"><%= s.status %></span> <%= s.display_carrier %> <%= link_to s.tracking_number.presence || "View update", s.tracking_url.to_s, target: "_blank", class: "mono" %></li>
         <% end %>
       </ul>
     <% else %>
