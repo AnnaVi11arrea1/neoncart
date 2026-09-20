@@ -32,6 +32,9 @@ gem "rack-cors"
 # Pagination
 gem "pagy", "~> 8.0"
 
+# .xlsx export (TikTok Shop Product Upload Accelerator, etc. — Excel-only tools)
+gem "caxlsx", "~> 4.1"
+
 # Image variants for uploaded product photos (requires libvips: apt install libvips)
 gem "image_processing", "~> 1.12"
 

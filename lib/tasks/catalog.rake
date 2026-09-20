@@ -24,4 +24,42 @@ namespace :catalog do
     puts "Catalog now: #{Product.group(:status).count}, " \
          "#{Variant.where(available: true).count}/#{Variant.count} variants available."
   end
+
+  desc "Export active products to .xlsx for TikTok Shop's Product Upload Accelerator. " \
+       "Usage: rake 'catalog:export_tiktok[/path/to/output.xlsx]' (defaults to tmp/tiktok_export.xlsx)"
+  task :export_tiktok, [:path] => :environment do |_t, args|
+    require "caxlsx"
+
+    path = args[:path].presence || Rails.root.join("tmp/tiktok_export.xlsx").to_s
+    # No product here has a real GTIN/UPC/EAN/ASIN — ArtsAdd (and every other
+    # supplier so far) never assigns one to print-on-demand items, and this
+    # column is left blank pending a GTIN exemption from TikTok rather than
+    # stuffing in an internal SKU that doesn't match any real barcode format.
+    #
+    # One row per variant, not per product: the Accelerator's 5 columns have
+    # no notion of "variant/size" at all, so the only way to give each size
+    # its own price/quantity is to make each one its own row, with the size
+    # folded into the product name to tell rows for the same product apart.
+    package = Axlsx::Package.new
+    package.workbook.add_worksheet(name: "Products") do |sheet|
+      sheet.add_row ["Identifier code", "Product name", "Product description", "Price", "Quantity"]
+
+      Product.active.includes(:variants).find_each do |product|
+        description = product.description.to_plain_text
+        multi_variant = product.variants.size > 1
+
+        product.variants.each do |variant|
+          name = multi_variant ? "#{product.title} — #{variant.label}" : product.title
+          price = variant.price_cents_or_default / 100.0
+          quantity = variant.available? ? 999 : 0
+          sheet.add_row [nil, name, description, price, quantity]
+        end
+      end
+    end
+    package.serialize(path)
+
+    rows = Variant.joins(:product).merge(Product.active).count
+    puts "Wrote #{rows} row(s) (one per variant) to #{path}."
+    puts "Identifier code column is blank — fill it in once your GTIN exemption is confirmed."
+  end
 end
