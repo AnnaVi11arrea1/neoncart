@@ -3,6 +3,12 @@ module Users
     def google_oauth2
       user = User.from_omniauth(request.env["omniauth.auth"])
       if user.persisted?
+        # Cart's "get $5 off" button passes ?origin=/cart through the OAuth
+        # round-trip so signing in lands them back where they were, not on
+        # the homepage — otherwise the whole point (immediately seeing and
+        # applying the new credit) is lost a click away.
+        origin = request.env.dig("omniauth.params", "origin")
+        store_location_for(user, origin) if origin.present? && origin.start_with?("/")
         sign_in_and_redirect user, event: :authentication
         set_flash_message(:notice, :success, kind: "Google") if is_navigational_format?
       else

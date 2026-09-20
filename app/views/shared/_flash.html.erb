@@ -1,4 +1,4 @@
 <% flash.each do |kind, message| %>
-  <% next if message.blank? || kind == "new_token" %>
+  <% next if message.blank? || kind.to_s.in?(%w[new_token ga_event]) %>
   <div class="flash flash--<%= kind %>" role="status"><%= message %></div>
 <% end %>

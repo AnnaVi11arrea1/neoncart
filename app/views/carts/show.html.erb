@@ -38,6 +38,16 @@
     <div class="cart__summary">
       <p class="cart__subtotal">Subtotal <strong class="mono"><%= format_money(@cart.subtotal_cents) %></strong></p>
       <p class="hint">Shipping and tax calculated at checkout. Pay by card, Google Pay, or Apple Pay.</p>
+
+      <% unless user_signed_in? %>
+        <div class="cart__signup-nudge">
+          <p><strong>Get $5 off this order</strong> — create a free account, takes two seconds.</p>
+          <%= button_to "Continue with Google", user_google_oauth2_omniauth_authorize_path(origin: cart_path),
+                data: { turbo: false }, class: "btn btn--oauth" %>
+          <p class="hint"><%= link_to "or sign up with email", new_user_registration_path %></p>
+        </div>
+      <% end %>
+
       <% if user_signed_in? && current_user.store_credit_cents.positive? %>
         <label class="check">
           <%= check_box_tag "apply_credit", "1", true, form: "checkout-form" %>
