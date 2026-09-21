@@ -52,6 +52,8 @@ Rails.application.routes.draw do
       resources :products, only: %i[index show], param: :slug
       resources :paintings, only: %i[index show], param: :slug
       resources :orders, only: %i[create show], param: :number
+      # The publish worker records a post here once it has actually gone out.
+      resources :published_posts, only: %i[create]
       get "ping", to: "base#ping"
     end
   end
@@ -93,6 +95,8 @@ Rails.application.routes.draw do
         post :reject
       end
     end
+    # The retro post search: social posts that have actually gone out.
+    resources :published_posts, only: %i[index]
     resources :api_keys, only: %i[index create destroy]
     resources :webhook_endpoints, only: %i[index create update destroy]
 

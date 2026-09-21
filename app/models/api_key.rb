@@ -1,5 +1,8 @@
 class ApiKey < ApplicationRecord
-  SCOPES = %w[products:read orders:read orders:write orders:write_paid].freeze
+  # A scope not listed here is silently dropped by `generate!` below, because
+  # it intersects against this list — so a key would be created looking fine
+  # and every request with it would 403. Add the scope here first.
+  SCOPES = %w[products:read orders:read orders:write orders:write_paid posts:write].freeze
 
   has_many :orders, dependent: :nullify
 
