@@ -39,17 +39,34 @@ module Api
       end
 
       def archive_params
-        permitted = params.require(:published_post).permit(
+        payload = params.require(:published_post)
+        permitted = payload.permit(
           :sanity_post_id, :platform, :post_format, :caption, :permalink, :asset_url,
-          :published_at, store_product_ids: []
+          :published_at
         )
         # An archive must not refuse to record something that has already been
         # published. So a missing caption is stored as empty rather than
         # rejected, and only the fields that identify the post are required.
         permitted[:caption] = permitted[:caption].to_s
         permitted[:published_at] = permitted[:published_at].presence || Time.current
-        permitted[:store_product_ids] = Array(permitted[:store_product_ids]).map(&:to_i)
+        permitted[:store_product_ids] = product_ids(payload[:store_product_ids])
         permitted
+      end
+
+      # Read the ids off the payload rather than through `permit`, which drops a
+      # bare value given where an array was expected: the post would archive
+      # with no products attached and nothing anywhere saying why. Anything that
+      # is not a usable id is dropped too, because `to_i` turns a word or a
+      # nested object into 0 and the row would then claim product 0, which is
+      # no product at all.
+      def product_ids(raw)
+        list = raw.is_a?(Array) ? raw : [raw]
+        list.filter_map do |value|
+          next unless value.is_a?(String) || value.is_a?(Numeric)
+
+          id = value.to_i
+          id if id.positive?
+        end.uniq
       end
 
       def post_json(record)
