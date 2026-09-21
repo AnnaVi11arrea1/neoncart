@@ -1,0 +1,34 @@
+<% content_for :title, "Retro post search" %>
+<div class="page-head">
+  <h1>Retro post search</h1>
+</div>
+
+<%= form_with url: admin_published_posts_path, method: :get, class: "searchbar" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Search what you posted…" %>
+  <%= f.select :platform, options_for_select([["Any platform", ""], "instagram", "tiktok", "facebook", "linkedin"], params[:platform]) %>
+  <%= f.submit "Filter", class: "btn btn--sm" %>
+<% end %>
+
+<% if @published_posts.any? %>
+  <table class="table">
+    <thead><tr><th>Posted</th><th>Platform</th><th>Caption</th><th>Products</th><th></th></tr></thead>
+    <tbody>
+      <% @published_posts.each do |post| %>
+        <tr>
+          <td class="mono"><%= post.published_at&.strftime("%-d %b %Y") %></td>
+          <td><%= post.platform %><%= " · #{post.post_format}" if post.post_format.present? %></td>
+          <td><%= truncate(post.caption, length: 140) %></td>
+          <td>
+            <% post.products.each do |product| %>
+              <%= link_to product.title, edit_admin_product_path(product), class: "linklike" %><br>
+            <% end %>
+          </td>
+          <td><%= link_to "View live", post.permalink, class: "linklike", target: "_blank", rel: "noopener" if post.permalink.present? %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= render "shared/pagination", pagy: @pagy %>
+<% else %>
+  <p class="hint">Nothing here yet. A post is archived at the moment it actually publishes, so this fills up once the publisher starts running — the caption is stored exactly as it went out, which is why you can search it later even if the original gets edited.</p>
+<% end %>

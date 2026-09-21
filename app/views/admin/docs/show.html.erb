@@ -5,7 +5,7 @@
 <section class="panel">
   <h2>Authentication</h2>
   <pre class="mono">Authorization: Bearer nc_live_xxxxxxxxxxxxxxxxxxxxxxxx</pre>
-  <p class="hint">Scopes: <span class="mono">products:read</span>, <span class="mono">orders:read</span>, <span class="mono">orders:write</span> (create via Stripe checkout), <span class="mono">orders:write_paid</span> (create already-paid orders).</p>
+  <p class="hint">Scopes: <span class="mono">products:read</span>, <span class="mono">orders:read</span>, <span class="mono">orders:write</span> (create via Stripe checkout), <span class="mono">orders:write_paid</span> (create already-paid orders), <span class="mono">posts:write</span> (record a published social post).</p>
 </section>
 
 <section class="panel">
@@ -94,6 +94,27 @@
   <h2>GET /ping</h2>
   <p>Auth + connectivity check. Any valid key.</p>
   <pre class="mono">{ "ok": true, "store": "<%= Rails.configuration.x.store_name %>", "time": "2026-07-07T12:00:00Z" }</pre>
+</section>
+
+<section class="panel">
+  <h2>POST /published_posts</h2>
+  <p>Record a social post that has gone out, so it shows up under <%= link_to "Retro post search", admin_published_posts_path %>. Scope: <span class="mono">posts:write</span>.</p>
+  <p class="hint">Idempotent on <span class="mono">sanity_attempt_id</span> — the same id updates the existing row and returns <span class="mono">200</span> instead of creating a second one, so a retry is safe. A first write returns <span class="mono">201</span>. The payload is nested under <span class="mono">published_post</span> because a top-level <span class="mono">format</span> key would collide with Rails' own request-format parameter.</p>
+  <pre class="mono">curl -X POST <%= Rails.configuration.x.store_url %>/api/v1/published_posts \
+  -H "Authorization: Bearer $NEONCART_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"published_post":{
+        "sanity_attempt_id":"pubAttempt-8f21",
+        "sanity_post_id":"post-4a09",
+        "platform":"instagram",
+        "post_format":"feed_image",
+        "caption":"Flares that go off under blacklight.",
+        "permalink":"https://instagram.com/p/abc123",
+        "asset_url":"https://cdn.sanity.io/...jpg",
+        "store_product_ids":[41,42],
+        "published_at":"2026-09-21T18:04:00Z"
+      }}'</pre>
+  <p class="hint">The caption is stored as posted. It is deliberately a copy, not a reference: the post can be edited in the CMS afterwards, and the archive has to keep what actually went out.</p>
 </section>
 
 <section class="panel">
