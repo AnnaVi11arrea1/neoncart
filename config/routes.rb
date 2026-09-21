@@ -95,6 +95,17 @@ Rails.application.routes.draw do
         post :reject
       end
     end
+    # Posts drafted in the CMS, waiting on approval before they go out. The
+    # queue itself is served by the publisher, so there is no local model here.
+    # The id constraint matters: a CMS document id contains a dot
+    # ("drafts.abc-123") and Rails would otherwise read everything after it as a
+    # response format and hand the action a truncated id.
+    get  "post_queue", to: "post_queue#index", as: :post_queue
+    post "post_queue/:id/approve", to: "post_queue#approve", as: :approve_post_queue,
+         constraints: { id: %r{[^/]+} }
+    post "post_queue/:id/reject", to: "post_queue#reject", as: :reject_post_queue,
+         constraints: { id: %r{[^/]+} }
+
     # The retro post search: social posts that have actually gone out.
     resources :published_posts, only: %i[index]
     resources :api_keys, only: %i[index create destroy]
