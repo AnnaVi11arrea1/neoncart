@@ -1,0 +1,19 @@
+<% content_for :title, "Return Policy · #{store_name}" %>
+<% content_for :description, "#{store_name}'s return policy: 30 days from delivery, item must be unworn and undamaged. Original paintings are final sale." %>
+
+<div class="narrow">
+  <h1>Return Policy</h1>
+  <p class="hint">Last updated <%= Date.new(2026, 9, 21).strftime("%B %-d, %Y") %></p>
+
+  <h2>30-day window</h2>
+  <p>You can return an item within <strong>30 days</strong> of the date your package is marked delivered.</p>
+
+  <h2>Condition</h2>
+  <p>Returned items must be in new, unworn condition — no stains, rips, or signs of wear. Items that don't meet this won't be eligible for a refund.</p>
+
+  <h2>Original paintings are final sale</h2>
+  <p>Because each piece is one of a kind, original paintings are not returnable or refundable. Prints, apparel, and other goods are covered by the policy above.</p>
+
+  <h2>How to start a return</h2>
+  <p><%= link_to "Open a support ticket", new_ticket_path %> with your order number and we'll walk you through it. Once we receive and inspect the return, your refund is issued to your original payment method.</p>
+</div>

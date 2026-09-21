@@ -1,7 +1,7 @@
 class ApplicationController < ActionController::Base
   include Pagy::Backend
 
-  helper_method :current_cart, :store_name, :preview_mode?
+  helper_method :current_cart, :store_name, :store_email, :preview_mode?
 
   private
 
@@ -18,6 +18,8 @@ class ApplicationController < ActionController::Base
   end
 
   def store_name = Rails.configuration.x.store_name
+
+  def store_email = Rails.configuration.x.store_email
 
   def preview_mode?
     ENV.fetch("PREVIEW_MODE", Rails.env.development? ? "1" : "0") == "1"

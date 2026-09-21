@@ -7,6 +7,9 @@ Rails.application.routes.draw do
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
 
+  get "privacy", to: "pages#privacy", as: :privacy
+  get "returns", to: "pages#returns", as: :return_policy
+
   # Painting gallery (public). Admin uploads live under /admin/paintings.
   get "gallery",       to: "gallery#index", as: :gallery
   get "gallery/:slug", to: "gallery#show",  as: :painting

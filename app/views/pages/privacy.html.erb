@@ -1,0 +1,27 @@
+<% content_for :title, "Privacy Policy · #{store_name}" %>
+<% content_for :description, "How #{store_name} collects, uses, and protects your information. We never sell or share your personal information." %>
+
+<div class="narrow">
+  <h1>Privacy Policy</h1>
+  <p class="hint">Last updated <%= Date.new(2026, 9, 21).strftime("%B %-d, %Y") %></p>
+
+  <p>The short version: <strong>we do not sell or share your personal information with anyone.</strong> Here's what we collect, why, and how it's handled.</p>
+
+  <h2>What we collect</h2>
+  <p>When you place an order or create an account, we collect what's needed to make that work: your name, email address, shipping address, and order details. Payment is handled entirely by Stripe — we never see or store your card number.</p>
+
+  <h2>How we use it</h2>
+  <p>Your information is used only to fulfill and ship your order, send order and shipping updates, respond to support requests, and maintain your account (favorites, order history, store credit) if you have one. If you sign in with Google, we receive your name and email from Google to create or match your account — nothing more.</p>
+
+  <h2>We don't sell or share it</h2>
+  <p>We never sell, rent, or share your personal information with advertisers or data brokers. The only information passed to outside companies is the minimum needed to run the store itself — your shipping address goes to the shipping carrier, your payment goes to Stripe — and none of those companies are permitted to use it for anything else.</p>
+
+  <h2>Cookies and analytics</h2>
+  <p>This site uses Google Analytics to understand overall traffic (like which pages are popular), using standard cookies. This is aggregate usage data, not something we sell or hand over to third parties — it just helps us know what's working.</p>
+
+  <h2>Your data, your control</h2>
+  <p>You can view and manage your order history and account details any time from <%= link_to "your account page", account_path %>. To request that we delete your account or personal data, just <%= link_to "reach out", new_ticket_path %> or email <%= mail_to store_email %>.</p>
+
+  <h2>Questions</h2>
+  <p>If anything here is unclear, email <%= mail_to store_email %> and we'll sort it out.</p>
+</div>
