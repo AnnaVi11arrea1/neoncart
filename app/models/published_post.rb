@@ -9,7 +9,6 @@ class PublishedPost < ApplicationRecord
 
   before_validation :drop_unsafe_urls
 
-
   scope :on_platform, ->(platform) { platform.blank? ? all : where(platform:) }
 
   # Same shape as Product.search: ILIKE, no search gem, nothing to install.
