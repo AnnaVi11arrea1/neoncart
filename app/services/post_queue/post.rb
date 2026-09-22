@@ -14,7 +14,16 @@ module PostQueue
     def caption = @attrs["caption"].to_s
     def platform = @attrs["platform"].presence
     def post_format = @attrs["post_format"].presence
-    def asset_url = @attrs["asset_url"].presence
+
+    # Rendered as an image source and as a link in the admin, so anything that
+    # is not plainly http(s) is dropped: a "javascript:" URL here would run in
+    # Anna's own signed-in session. The publisher is ours, so this guards
+    # against it being wrong rather than against an attacker, but it is an
+    # admin page and the check is one line.
+    def asset_url
+      value = @attrs["asset_url"].presence
+      value if value.to_s.match?(%r{\Ahttps?://}i)
+    end
 
     def asset_kind
       kind = @attrs["asset_kind"].to_s
