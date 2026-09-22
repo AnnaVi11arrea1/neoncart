@@ -43,9 +43,7 @@ module PostQueue
       Array(@attrs["products"]).filter_map do |entry|
         next unless entry.is_a?(Hash)
 
-        store_id = entry["store_id"]
-        { store_id: store_id.is_a?(String) || store_id.is_a?(Numeric) ? store_id.to_i : nil,
-          title: entry["title"].to_s }
+        { store_id: store_id_of(entry["store_id"]), title: entry["title"].to_s }
       end
     end
 
@@ -74,6 +72,15 @@ module PostQueue
     def unchecked? = !@attrs["verdict"].is_a?(Hash)
 
     private
+
+    # Only a real id, so the label never reads "product 0" — `to_i` turns a word
+    # or an object into 0, and product 0 does not exist.
+    def store_id_of(value)
+      return nil unless value.is_a?(String) || value.is_a?(Numeric)
+
+      id = value.to_i
+      id.positive? ? id : nil
+    end
 
     def messages(key)
       verdict = @attrs["verdict"]

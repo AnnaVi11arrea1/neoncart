@@ -47,7 +47,8 @@
             <% found = post.store_products.index_by(&:id) %>
             <%= safe_join(post.products.map { |p|
                   product = found[p[:store_id]]
-                  product ? link_to(product.title, edit_admin_product_path(product), class: "linklike") : h(p[:title].presence || "product #{p[:store_id]}")
+                  next link_to(product.title, edit_admin_product_path(product), class: "linklike") if product
+                  h(p[:title].presence || (p[:store_id] ? "product #{p[:store_id]}" : "a product that is no longer here"))
                 }, ", ") %>
           </p>
         <% end %>

@@ -26,14 +26,35 @@ module PostQueue
     def pending
       body = request(:get, "posts/pending")
       list = body.is_a?(Hash) ? body["posts"] : body
-      Array(list).filter_map { |attrs| Post.new(attrs) if attrs.is_a?(Hash) }
+      # A 200 carrying something that is not a queue — an HTML sign-in page, a
+      # deployment-protection interstitial, a proxy notice — must raise, not
+      # read as an empty queue. Anything else and a misconfigured URL tells Anna
+      # there is nothing to approve, which is the failure this whole class is
+      # written around. The check is on the shape, because the status was 200.
+      raise Error, "the publisher answered with something that is not a queue" unless list.is_a?(Array)
+
+      list.filter_map do |attrs|
+        next unless attrs.is_a?(Hash)
+        # An entry with no id cannot be approved or rejected — there is nothing
+        # to address the decision to — and rendering it would take the whole
+        # page down on route generation. Dropped here rather than in the view,
+        # and logged, because silence is the thing being avoided.
+        if attrs["id"].blank?
+          Rails.logger.warn("[post_queue] dropped a pending post with no id")
+          next
+        end
+
+        Post.new(attrs)
+      end
     end
 
     def decide!(id, decision:, actor:, note: nil)
       raise ArgumentError, "decision must be one of #{DECISIONS.join(", ")}" unless DECISIONS.include?(decision)
       raise ArgumentError, "a post id is required" if id.blank?
 
-      request(:post, "posts/#{CGI.escape(id)}/decision", decision:, actor:, note: note.presence)
+      # url_encode, not CGI.escape: this is a path segment, and CGI.escape
+      # would turn a space into a "+" rather than "%20".
+      request(:post, "posts/#{ERB::Util.url_encode(id)}/decision", decision:, actor:, note: note.presence)
     end
 
     private

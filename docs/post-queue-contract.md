@@ -58,12 +58,23 @@ the store does not re-sort them.
 }
 ```
 
-A bare JSON array is accepted too. Every field except `id` is optional, and the
-page is built to survive any of them missing — a queue that 500s because one post
-has no caption is worse than one that shows the caption blank.
+A bare JSON array is accepted too.
 
-- `id` — the CMS document id. It contains a dot, which the store escapes and
-  routes around; send it exactly as the CMS has it.
+**Answer with a JSON content-type.** The store tells "unreadable" from "empty" by
+the shape of what comes back, so a `200` carrying HTML — a sign-in page, a
+deployment-protection interstitial, a proxy notice — is the failure that reads as
+success. Anything that is not a JSON array, or an object with an array under
+`posts`, raises and the page says it could not load the queue; it never renders as
+"nothing waiting".
+
+Every field except `id` is optional, and the page is built to survive any of them
+missing — a queue that 500s because one post has no caption is worse than one that
+shows the caption blank. An entry with no `id` is dropped and logged, because
+there is nothing to address a decision to.
+
+- `id` — the CMS document id, and the one field that must be there. It contains a
+  dot, which the store escapes and routes around; send it exactly as the CMS has
+  it.
 - `asset_kind` — `image` or `video`. Anything else is ignored and the asset is
   offered as a link rather than shown inline.
 - `products[].store_id` — this store's numeric product id, which the CMS already
