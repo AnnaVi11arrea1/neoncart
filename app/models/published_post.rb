@@ -7,6 +7,9 @@ class PublishedPost < ApplicationRecord
   validates :sanity_attempt_id, presence: true, uniqueness: true
   validates :platform, :published_at, presence: true
 
+  before_validation :drop_unsafe_urls
+
+
   scope :on_platform, ->(platform) { platform.blank? ? all : where(platform:) }
 
   # Same shape as Product.search: ILIKE, no search gem, nothing to install.
@@ -19,9 +22,28 @@ class PublishedPost < ApplicationRecord
 
   # Whichever of the products are still here. A product deleted since does not
   # invalidate the record of the post that featured it.
+  #
+  # One row at a time. A page of rows should collect the ids first and look
+  # them up once — see Admin::PublishedPostsController#index.
   def products
     return Product.none if store_product_ids.blank?
 
     Product.where(id: store_product_ids)
+  end
+
+  private
+
+  # These URLs come from the publisher and are rendered as links in the admin,
+  # where a "javascript:" scheme would run in Anna's own signed-in session.
+  # Dropped rather than rejected: a post that has already gone out must still be
+  # recorded, and losing the link to it is a far smaller loss than losing the
+  # row. A dropped link shows as no link at all, which is visible.
+  def drop_unsafe_urls
+    self.permalink = nil unless http_url?(permalink)
+    self.asset_url = nil unless http_url?(asset_url)
+  end
+
+  def http_url?(value)
+    value.blank? || value.to_s.match?(%r{\Ahttps?://}i)
   end
 end
