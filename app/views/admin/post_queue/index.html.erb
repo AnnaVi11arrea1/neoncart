@@ -1,0 +1,93 @@
+<% content_for :title, "Post queue" %>
+<div class="page-head">
+  <h1>Post queue</h1>
+  <p class="hint">Drafted from the catalog, waiting on you. Nothing leaves the store until you approve it here.</p>
+</div>
+
+<% if !@configured %>
+  <div class="empty">
+    <p>The publisher is not connected yet, so there is no queue to show.</p>
+    <p class="hint">Once it is running, set <span class="mono">POST_WORKER_URL</span> and <span class="mono">POST_WORKER_TOKEN</span> and this page fills itself. Posts that have already gone out are in <%= link_to "Retro post search", admin_published_posts_path, class: "linklike" %>.</p>
+  </div>
+<% elsif @error.present? %>
+  <div class="empty">
+    <p>Could not load the queue: <%= @error %>.</p>
+    <p class="hint">Nothing has been approved or sent. Reload to try again.</p>
+  </div>
+<% elsif @posts.any? %>
+  <div class="stack">
+    <% @posts.each do |post| %>
+      <div class="panel">
+        <div class="page-head">
+          <div>
+            <strong><%= post.platform.presence || "Unknown platform" %></strong>
+            <% if post.post_format.present? %><span class="hint">· <%= post.post_format %></span><% end %>
+            <% if post.updated_at %><span class="hint">· edited <%= time_ago_in_words(post.updated_at) %> ago</span><% end %>
+          </div>
+          <% if post.blocked? %>
+            <span class="chip">Blocked</span>
+          <% elsif post.unchecked? %>
+            <span class="chip">Not checked</span>
+          <% end %>
+        </div>
+
+        <% if post.asset_url.present? %>
+          <% if post.asset_kind == "image" %>
+            <%= image_tag post.asset_url, class: "review-card__photo", loading: "lazy", alt: "" %>
+          <% else %>
+            <p><%= link_to "Open the video", post.asset_url, class: "linklike", target: "_blank", rel: "noopener" %></p>
+          <% end %>
+        <% end %>
+
+        <p><%= post.caption.presence || "(no caption)" %></p>
+
+        <% if post.products.any? %>
+          <p class="hint">
+            Featuring
+            <% found = post.store_products.index_by(&:id) %>
+            <%= safe_join(post.products.map { |p|
+                  product = found[p[:store_id]]
+                  next link_to(product.title, edit_admin_product_path(product), class: "linklike") if product
+                  h(p[:title].presence || (p[:store_id] ? "product #{p[:store_id]}" : "a product that is no longer here"))
+                }, ", ") %>
+          </p>
+        <% end %>
+
+        <% if post.errors.any? %>
+          <div class="flash flash--alert" role="status">
+            <strong>Cannot go out as it is:</strong>
+            <% post.errors.each do |message| %><br><%= message %><% end %>
+          </div>
+        <% end %>
+
+        <% if post.warnings.any? %>
+          <p class="hint">
+            <strong>Worth a look, but not blocking:</strong>
+            <% post.warnings.each do |message| %><br><%= message %><% end %>
+          </p>
+        <% end %>
+
+        <% if post.unchecked? %>
+          <p class="hint">The publisher has not checked this one yet. It runs its own checks again at the moment it sends, so approving is safe — the send is what would refuse.</p>
+        <% end %>
+
+        <div class="btn-row">
+          <% if post.blocked? %>
+            <span class="hint">Fix it in the CMS, then it becomes approvable here.</span>
+          <% else %>
+            <%= button_to "Approve", admin_approve_post_queue_path(id: post.id), method: :post, class: "btn btn--sm" %>
+          <% end %>
+          <%= button_to "Reject", admin_reject_post_queue_path(id: post.id), method: :post, class: "btn btn--sm btn--danger" %>
+          <% if post.id.present? %>
+            <%= link_to "Open in the CMS", "#{Rails.configuration.x.studio_url}/structure/post;#{post.id}", class: "btn btn--ghost btn--sm", target: "_blank", rel: "noopener" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty">
+    <p>Nothing waiting. Every drafted post has been dealt with.</p>
+    <p class="hint">What has already gone out is in <%= link_to "Retro post search", admin_published_posts_path, class: "linklike" %>.</p>
+  </div>
+<% end %>
