@@ -30,6 +30,26 @@ module PostQueue
       ASSET_KINDS.include?(kind) ? kind : nil
     end
 
+    # A page showing this post as the platform will render it, which the queue
+    # embeds in a sandboxed iframe. Same scheme guard as `asset_url`, for the
+    # same reason and with more at stake: this one is framed rather than linked,
+    # so a "javascript:" or "data:" URL would be a script running on this page.
+    def preview_url
+      value = @attrs["preview_url"].presence
+      value if value.to_s.match?(%r{\Ahttps?://}i)
+    end
+
+    # The CMS document, without the variant key the publisher appends to address
+    # one platform's card. `post-8f21__ig` is the row; `post-8f21` is what the
+    # Studio knows about, so it is what a link into the Studio has to use.
+    def document_id
+      value = id
+      return nil if value.blank?
+
+      at = value.rindex("__")
+      at&.positive? ? value[0...at] : value
+    end
+
     def updated_at
       value = @attrs["updated_at"].presence
       value && Time.zone.parse(value.to_s)

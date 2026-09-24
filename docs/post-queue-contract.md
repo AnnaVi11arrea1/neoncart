@@ -46,6 +46,7 @@ the store does not re-sort them.
       "post_format": "reel",
       "asset_url": "https://cdn.sanity.io/files/…/clip.mp4",
       "asset_kind": "video",
+      "preview_url": "https://publish.everfluorescent.com/api/preview?id=…&exp=…&sig=…",
       "updated_at": "2026-09-21T18:04:00Z",
       "products": [{ "store_id": 412, "title": "Neon Moth print" }],
       "verdict": {
@@ -72,9 +73,18 @@ missing — a queue that 500s because one post has no caption is worse than one 
 shows the caption blank. An entry with no `id` is dropped and logged, because
 there is nothing to address a decision to.
 
-- `id` — the CMS document id, and the one field that must be there. It contains a
-  dot, which the store escapes and routes around; send it exactly as the CMS has
-  it.
+- `id` — addresses ONE variant, and is the one field that must be there. A post
+  with a Facebook and an Instagram variant is two rows with two captions and two
+  previews, so the id is the CMS document id, then `__`, then the variant key:
+  `drafts.post-8f21__ig`. The document id contains a dot, which the store escapes
+  and routes around; send the whole thing exactly as the publisher formed it. The
+  store splits on the LAST `__` when it needs the document on its own, to link
+  into the Studio.
+- `preview_url` — a page rendering this variant as the platform will show it,
+  which the store embeds in a sandboxed iframe. It is not behind the bearer
+  token, because an iframe sends no Authorization header; it carries a signature
+  and an expiry instead, and the publisher refuses an unsigned or stale one.
+  Optional: without it the store falls back to showing the asset.
 - `asset_kind` — `image` or `video`. Anything else is ignored and the asset is
   offered as a link rather than shown inline.
 - `products[].store_id` — this store's numeric product id, which the CMS already
@@ -101,6 +111,21 @@ sends. `actor` is the signed-in admin's email. `note` is omitted when blank.
 Any 2xx is success. On a non-2xx, the store shows the status and, if the body
 carries `{"error": "…"}` or `{"message": "…"}`, that text verbatim (truncated to
 200 characters) — so a refusal should say why in one sentence a person can read.
+
+## What a decision does today
+
+Approving records that Anna said yes — who and when — and leaves the variant's
+status alone, because `approved` is the state the sending half will read and
+overloading it to mean two things is how a post ends up somewhere nothing is
+looking. A decided variant leaves this queue because it has been decided, not
+because its status moved. Rejecting hands it back as a draft, with the note.
+
+The publisher re-runs the checks before it accepts an approval rather than
+trusting what this page showed, so a post that went stale between the page
+loading and the button being pressed is refused with a reason. A blocked post can
+still be rejected; that is how it gets cleared.
+
+**Nothing is sent to any platform.** That half does not exist yet.
 
 ## What the publisher still owes
 

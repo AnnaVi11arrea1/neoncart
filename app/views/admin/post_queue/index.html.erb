@@ -31,7 +31,18 @@
           <% end %>
         </div>
 
-        <% if post.asset_url.present? %>
+        <% if post.preview_url.present? %>
+          <%# The publisher renders this with the same components the CMS preview
+              pane uses, so what you see here is what you saw when you wrote it.
+              Sandboxed with nothing allowed: it is static markup and needs no
+              scripts, no forms and no access to this page. %>
+          <iframe src="<%= post.preview_url %>"
+                  class="post-queue__preview"
+                  sandbox=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  title="How this post will look on <%= post.platform.presence || "the platform" %>"></iframe>
+        <% elsif post.asset_url.present? %>
           <% if post.asset_kind == "image" %>
             <%= image_tag post.asset_url, class: "review-card__photo", loading: "lazy", alt: "" %>
           <% else %>
@@ -78,8 +89,10 @@
             <%= button_to "Approve", admin_approve_post_queue_path(id: post.id), method: :post, class: "btn btn--sm" %>
           <% end %>
           <%= button_to "Reject", admin_reject_post_queue_path(id: post.id), method: :post, class: "btn btn--sm btn--danger" %>
-          <% if post.id.present? %>
-            <%= link_to "Open in the CMS", "#{Rails.configuration.x.studio_url}/structure/post;#{post.id}", class: "btn btn--ghost btn--sm", target: "_blank", rel: "noopener" %>
+          <% if post.document_id.present? %>
+            <%# The row addresses one platform's card; the Studio knows the
+                document it belongs to, so the link drops the variant key. %>
+            <%= link_to "Open in the CMS", "#{Rails.configuration.x.studio_url}/structure/post;#{post.document_id}", class: "btn btn--ghost btn--sm", target: "_blank", rel: "noopener" %>
           <% end %>
         </div>
       </div>
