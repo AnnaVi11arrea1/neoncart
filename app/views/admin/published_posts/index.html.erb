@@ -19,8 +19,11 @@
           <td><%= post.platform %><%= " · #{post.post_format}" if post.post_format.present? %></td>
           <td><%= truncate(post.caption, length: 140) %></td>
           <td>
-            <% post.products.each do |product| %>
-              <%= link_to product.title, edit_admin_product_path(product), class: "linklike" %><br>
+            <% post.store_product_ids.each do |store_id| %>
+              <% product = @products_by_id[store_id] %>
+              <% if product %>
+                <%= link_to product.title, edit_admin_product_path(product), class: "linklike" %><br>
+              <% end %>
             <% end %>
           </td>
           <td><%= link_to "View live", post.permalink, class: "linklike", target: "_blank", rel: "noopener" if post.permalink.present? %></td>
