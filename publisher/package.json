@@ -1,0 +1,16 @@
+{
+  "name": "everfluorescent-publisher",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The publisher half of the post queue: serves the posts awaiting Anna's decision and records the decisions. It holds the CMS credential so the store does not have to.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test/publisher.test.mjs",
+    "vendor": "node tools/vendor-sync.mjs",
+    "verify": "node tools/vendor-sync.mjs --check"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

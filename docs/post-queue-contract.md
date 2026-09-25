@@ -3,8 +3,10 @@
 Two halves talk to each other: this store and the **publisher**, the service that
 drafts social posts from the catalog and sends them. This file is the contract
 between them. The store half is built (`Admin::PostQueueController`,
-`PostQueue::Client`); the publisher half is not, and this is what it has to
-answer.
+`PostQueue::Client`), and the publisher half now answers it from `publisher/` —
+`GET /posts/pending`, the decision endpoint and the preview, with its own README.
+What it still does not do is send: see **What the publisher still owes** at the
+bottom, which is unchanged.
 
 ## Why the store calls out instead of reading the CMS itself
 
@@ -126,6 +128,13 @@ loading and the button being pressed is refused with a reason. A blocked post ca
 still be rejected; that is how it gets cleared.
 
 **Nothing is sent to any platform.** That half does not exist yet.
+
+The publisher does re-run the checks at decision time, as below, and refuses a
+stale approval with the reason. Two caveats on what that verdict is worth: video
+duration is never checked, because Sanity stores no duration and the publisher
+has no decoder, so a clip the Studio would refuse can be approved here; and the
+preview is plain HTML from the same platform spec rather than the Studio's own
+React components, so the limits are right and the chrome is approximate.
 
 ## What the publisher still owes
 
