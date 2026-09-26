@@ -1,0 +1,34 @@
+# /etc/systemd/system/publisher.service — the post queue's publisher half
+#
+# Serves the posts awaiting a decision to the store admin, and records the
+# decisions. It holds the Sanity token; the store holds only a bearer token for
+# this service. See docs/post-queue-contract.md.
+#
+# Bound to loopback: the store calls it over 127.0.0.1 and nginx exposes only
+# the signed preview route. Nothing here is reachable from the internet directly.
+[Unit]
+Description=Ever Fluorescent post publisher
+# It talks to Sanity on every request, so the network has to be up rather than
+# merely configured — same reason as neoncart.service.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=anna
+WorkingDirectory=/home/anna/neoncart/publisher
+# Its own environment file, NOT the store's: the whole point is that the Sanity
+# token is not in the store's process. Keep it 0600 and owned by anna.
+EnvironmentFile=/home/anna/neoncart/publisher/.env
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=3
+
+# The decisions log is the only thing it writes.
+ReadWritePaths=/home/anna/neoncart/publisher/data
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

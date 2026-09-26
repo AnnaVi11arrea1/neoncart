@@ -11,3 +11,8 @@
 /node_modules
 config/master.key
 *.pid
+
+# The publisher's decisions log and its environment file.
+/publisher/data/*
+!/publisher/data/.keep
+/publisher/.env
