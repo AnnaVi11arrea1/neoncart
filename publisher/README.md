@@ -95,14 +95,25 @@ instead.
 
 `npm run draft` asks Claude to find the season ahead and propose short posts for
 products that suit it. It reads the shop and the Knowledge Base through Sanity
-Context, and it **writes nothing yet**: it prints the proposals, each with the
-sources behind its claims and any place two sources disagreed.
+Context and prints the proposals, each with the sources behind its claims and
+any place two sources disagreed. With `--write` it also creates them as draft
+posts at `needs_review`, which reach the store's queue like any other.
 
 ```bash
 npm run context-check        # both Context endpoints answer and list their tools
-npm run draft                # propose up to 5, looking 8 weeks ahead
+npm run draft                # propose up to 5, looking 8 weeks ahead; writes nothing
+npm run draft -- --write     # ...and create what passes the checks, for review
 npm run draft -- --max 3 --weeks 10
 ```
+
+Claude proposes; `planAgentDrafts` decides. Before anything is written, each
+proposal is checked against the dataset as it is now: the product exists, is
+active and has an image, the hook is five words or fewer, and both captions pass
+`preflight`'s caption rules. A product that already has any post is skipped, and
+the agent is told which those are up front so it does not spend a run on them.
+Drafts are created with `createIfNotExists` under `agent-<season>-<product>`, so
+nothing existing is ever edited. Every run is appended to `data/agent-runs.jsonl`
+with its sources and conflicts, which have no field on a post yet.
 
 The tool loop runs here, not through the API's MCP connector, so the Context
 token never leaves this machine. `context.mjs` is the MCP client; Context is

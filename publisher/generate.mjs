@@ -38,7 +38,7 @@ const GENERATION_QUERY = `
 }
 `
 
-const key = () => randomBytes(6).toString('hex')
+export const key = () => randomBytes(6).toString('hex')
 
 /** Sanity ids allow letters, digits, `_` and `-`; a dot would make it a path. */
 export function generatedId(campaignId, productId) {
@@ -46,7 +46,7 @@ export function generatedId(campaignId, productId) {
   return `gen-${clean(campaignId)}-${clean(productId)}`
 }
 
-function ref(id, type) {
+export function ref(id, type) {
   // The shape the Studio writes on a draft: weak until published, so a draft
   // post does not stop its campaign or product being deleted.
   return {_type: 'reference', _ref: id, _weak: true, _strengthenOnPublish: {type}}

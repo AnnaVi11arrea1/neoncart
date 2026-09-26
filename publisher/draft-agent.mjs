@@ -5,9 +5,12 @@
  *   npm run draft                     propose drafts, print them, write nothing
  *   npm run draft -- --weeks 10       look further ahead (default 8)
  *   npm run draft -- --max 3          fewer proposals (default 5)
+ *   npm run draft -- --write          also create them as drafts for review
  *
- * It WRITES NOTHING yet. Step 4 of the implementation log adds the checks and
- * the write; until then this is how the proposals are judged.
+ * Without --write it only prints. With it, each proposal is checked against the
+ * dataset as it is now (planAgentDrafts) and what passes is created as a draft
+ * post at needs_review, where it reaches the store's queue like any other. Every
+ * run, written or not, is appended to data/agent-runs.jsonl with its sources.
  *
  * The tool loop runs here rather than through the API's MCP connector, so the
  * Context token never leaves this machine: Claude asks for a tool, this process
@@ -18,7 +21,12 @@
  * `initial_context`: `shop__` is products and campaigns, `kb__` the Knowledge
  * Base (the website and the vault notes).
  */
+import {appendFileSync, mkdirSync} from 'node:fs'
+import {dirname} from 'node:path'
 import {connect} from './context.mjs'
+import {key, ref} from './generate.mjs'
+import {preflight} from './vendor/preflight.js'
+import {publishedId} from './ids.mjs'
 
 const MODEL = 'claude-opus-5'
 const MAX_TURNS = 25
@@ -36,9 +44,10 @@ const SUBMIT_DRAFTS = {
   input_schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['season', 'drafts'],
+    required: ['season', 'seasonKey', 'drafts'],
     properties: {
       season: {type: 'string', description: 'The season or occasion these posts are for, and its dates, as the calendar gives them.'},
+      seasonKey: {type: 'string', description: 'A short lowercase slug naming the season and year, e.g. "fall-2026" or "halloween-2026". The same season must always get the same key.'},
       drafts: {
         type: 'array',
         items: {
@@ -143,7 +152,26 @@ async function callClaude(body) {
   return payload
 }
 
-export async function runAgent({today, weeks = 8, max = 5, log = () => {}} = {}) {
+/**
+ * Products that already have a post of any kind. The Context endpoint cannot
+ * see posts, so without this the agent proposes products that planAgentDrafts
+ * would only skip afterwards, and the tokens spent on them are wasted.
+ */
+export async function productsWithPosts(client) {
+  return client.query(
+    `*[_type == "product" && _id in array::unique(*[_type == "post"].products[]._ref)]{_id, title} | order(title asc)`,
+  )
+}
+
+export function userMessage(today, exclude = []) {
+  const lines = [`Propose the posts for the season ahead. Today is ${today}.`]
+  if (exclude.length) {
+    lines.push('', 'These products already have a post. Do not propose them:', ...exclude.map((p) => `- ${p.title} (${p._id})`))
+  }
+  return lines.join('\n')
+}
+
+export async function runAgent({today, weeks = 8, max = 5, exclude = [], log = () => {}} = {}) {
   const token = process.env.SANITY_CONTEXT_TOKEN?.trim()
   const missing = ['ANTHROPIC_API_KEY', 'SANITY_CONTEXT_TOKEN', ...ENDPOINTS.map((e) => e.env)].filter((k) => !process.env[k]?.trim())
   if (missing.length) throw new Error(`Not configured. Missing in publisher/.env: ${missing.join(', ')}`)
@@ -160,7 +188,7 @@ export async function runAgent({today, weeks = 8, max = 5, log = () => {}} = {})
   }
   tools.push(SUBMIT_DRAFTS)
 
-  const messages = [{role: 'user', content: `Propose the posts for the season ahead. Today is ${today}.`}]
+  const messages = [{role: 'user', content: userMessage(today, exclude)}]
   const usage = {input: 0, cacheWrite: 0, cacheRead: 0, output: 0}
   // Every turn resends everything before it. The marker on the system prompt
   // caches tools + instructions (the part that never changes within a run), and
@@ -216,6 +244,133 @@ export async function runAgent({today, weeks = 8, max = 5, log = () => {}} = {})
   throw new Error(`No drafts after ${MAX_TURNS} turns.`)
 }
 
+// ---------------------------------------------------------------------------
+// Writing. Claude proposes; this decides. Everything a proposal claims about a
+// product is checked against the dataset as it is now, not as the model read it.
+
+const PLATFORMS = ['instagram', 'facebook']
+const MAX_HOOK_WORDS = 5
+
+const WRITE_QUERY = `
+{
+  "products": *[_type == "product" && _id in $ids]{
+    _id, title, storeUrl, storeStatus, incomplete,
+    "image": images[0].asset._ref,
+    "meta": images[0].asset->{mimeType, originalFilename, metadata{dimensions}}
+  },
+  "posts": *[_type == "post" && references($ids)]{_id, "products": products[]._ref}
+}
+`
+
+/** A Sanity-id-safe slug. The season key comes from the model, so it is cleaned, not trusted. */
+export function slug(text) {
+  return String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+}
+
+export function agentPostId(seasonKey, productId) {
+  return `agent-${slug(seasonKey) || 'season'}-${String(productId).replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+/** "fall-2026" → "Fall 2026", for the post title. */
+export function seasonLabel(seasonKey) {
+  return (slug(seasonKey) || 'season').split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
+const words = (text) => String(text ?? '').trim().split(/\s+/).filter(Boolean).length
+
+/**
+ * Decide what to create. Pure: no network, so it is what the tests exercise.
+ * Returns {create: [document], skipped: [{product, reason}]}.
+ */
+export function planAgentDrafts(proposal, data) {
+  const create = []
+  const skipped = []
+  const products = new Map((data?.products ?? []).map((p) => [p._id, p]))
+
+  // A product with any post already — generated from a campaign, made by hand,
+  // or drafted by an earlier run — is left alone, so the queue never holds two
+  // posts for one product.
+  const covered = new Set()
+  for (const post of data?.posts ?? []) {
+    covered.add(publishedId(post._id))
+    for (const id of post.products ?? []) covered.add(id)
+  }
+
+  for (const draft of proposal?.drafts ?? []) {
+    const name = draft.productTitle || draft.productId
+    const skip = (reason) => skipped.push({product: name, reason})
+    const product = products.get(draft.productId)
+    const id = agentPostId(proposal.seasonKey, draft.productId)
+
+    if (!product) { skip(`no product ${draft.productId} in the dataset`); continue }
+    if (covered.has(product._id) || covered.has(id)) { skip('it already has a post'); continue }
+    if (product.storeStatus && product.storeStatus !== 'active') { skip(`it is ${product.storeStatus} in the store`); continue }
+    if (!product.image) { skip('it has no image'); continue }
+    if (words(draft.hook) > MAX_HOOK_WORDS) { skip(`the hook "${draft.hook}" is ${words(draft.hook)} words; the limit is ${MAX_HOOK_WORDS}`); continue }
+
+    // The caption checks are the model's to pass, so a failure stops the write.
+    // Anything else preflight finds (image ratio, accounts) is the same for a
+    // hand-made post, and shows in the queue's verdict as it would for one.
+    const captionErrors = PLATFORMS.flatMap((platform) =>
+      preflight({
+        platform,
+        format: 'feed_image',
+        caption: draft[platform] ?? '',
+        assets: [],
+        products: [],
+        accountConfigured: true,
+        accountAudited: true,
+      })
+        .errors.filter((issue) => issue.field === 'caption')
+        .map((issue) => `${platform}: ${issue.message}`),
+    )
+    if (captionErrors.length) { skip(captionErrors.join('; ')); continue }
+
+    create.push({
+      _id: `drafts.${id}`,
+      _type: 'post',
+      title: `${seasonLabel(proposal.seasonKey)}: ${product.title.trim()}`,
+      products: [{_key: key(), ...ref(product._id, 'product')}],
+      hook: draft.hook,
+      body: draft.angle,
+      cta: 'Shop now',
+      link: product.storeUrl ?? undefined,
+      variants: PLATFORMS.map((platform) => ({
+        _key: key(),
+        _type: 'variant',
+        platform,
+        format: 'feed_image',
+        caption: draft[platform],
+        status: 'needs_review',
+        assets: [{_key: key(), _type: 'image', asset: {_type: 'reference', _ref: product.image}}],
+      })),
+    })
+  }
+
+  return {create, skipped}
+}
+
+/**
+ * Check the proposal against the dataset and create what passes, as drafts at
+ * needs_review. createIfNotExists: a post that exists is never touched, so a
+ * caption rewritten in the Studio is never overwritten by a later run.
+ */
+export async function writeAgentDrafts(client, proposal) {
+  const ids = [...new Set((proposal.drafts ?? []).map((d) => d.productId))]
+  const plan = planAgentDrafts(proposal, await client.query(WRITE_QUERY, {ids}))
+  if (plan.create.length) await client.mutate(plan.create.map((doc) => ({createIfNotExists: doc})))
+  return plan
+}
+
+/**
+ * The sources and conflicts behind each draft have no field on a post yet
+ * (that is Step 5), so each run is kept here, one JSON line per run.
+ */
+export function recordRun(path, proposal, plan) {
+  mkdirSync(dirname(path), {recursive: true})
+  appendFileSync(path, `${JSON.stringify({at: new Date().toISOString(), proposal, written: plan?.create.map((d) => d._id) ?? [], skipped: plan?.skipped ?? []})}\n`)
+}
+
 /** Token counts and what they cost at Opus 5 list prices ($5 in, $25 out per MTok). */
 export function tokens({input, cacheWrite, cacheRead, output}) {
   const dollars = (input * 5 + cacheWrite * 6.25 + cacheRead * 0.5 + output * 25) / 1e6
@@ -244,12 +399,29 @@ if (isMain) {
     if (!Number.isInteger(value) || value < 1) throw new Error(`--${name} must be a whole number above 0`)
     return value
   }
+  const write = process.argv.includes('--write')
   try {
     const today = new Date().toISOString().slice(0, 10)
-    console.log(`[draft-agent] ${MODEL}, looking ${arg('weeks', 8)} weeks ahead from ${today}`)
-    const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), log: console.log})
+    console.log(`[draft-agent] ${MODEL}, looking ${arg('weeks', 8)} weeks ahead from ${today}${write ? '' : ' (dry run: add --write to create drafts)'}`)
+    const {load} = await import('./config.mjs')
+    const {createClient} = await import('./sanity.mjs')
+    const client = createClient(load().sanity)
+    const exclude = await productsWithPosts(client)
+    if (exclude.length) console.log(`[draft-agent] ${exclude.length} product(s) already have a post and are excluded`)
+    const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), exclude, log: console.log})
     console.log(`\n${formatProposal(proposal)}`)
-    console.log(`[draft-agent] ${proposal.drafts.length} proposal(s) in ${proposal.turns} turn(s), ${tokens(proposal.usage)}. Nothing was written.`)
+    console.log(`[draft-agent] ${proposal.drafts.length} proposal(s) in ${proposal.turns} turn(s), ${tokens(proposal.usage)}.`)
+
+    let plan = null
+    if (write) {
+      plan = await writeAgentDrafts(client, proposal)
+      for (const doc of plan.create) console.log(`[draft-agent] drafted "${doc.title}" for review (${doc._id})`)
+      for (const s of plan.skipped) console.log(`[draft-agent] skipped ${s.product}: ${s.reason}`)
+      console.log(`[draft-agent] ${plan.create.length} draft(s) written at needs_review, ${plan.skipped.length} skipped.`)
+    } else {
+      console.log('[draft-agent] Nothing was written.')
+    }
+    recordRun(process.env.PUBLISHER_AGENT_LOG?.trim() || './data/agent-runs.jsonl', proposal, plan)
   } catch (error) {
     console.error(`[draft-agent] ${error.message}`)
     process.exit(1)

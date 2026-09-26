@@ -18,6 +18,7 @@ import {openDecisions} from '../decisions.mjs'
 import {splitVariantId, variantId} from '../ids.mjs'
 import {previewUrl} from '../preview.mjs'
 import {captionFor, generatedId, planGeneration} from '../generate.mjs'
+import {agentPostId, planAgentDrafts, routeToolName, seasonLabel, toApiTools} from '../draft-agent.mjs'
 
 const work = mkdtempSync(join(tmpdir(), 'publisher-test-'))
 let passed = 0
@@ -656,6 +657,72 @@ check('only Facebook captions carry the link, since Instagram ones are not click
   const product = PRODUCT(1)
   assert.doesNotMatch(captionFor('instagram', FALL, product), /https?:/)
   assert.match(captionFor('facebook', FALL, product), /hoodie-1$/)
+})
+
+// --- the draft agent -----------------------------------------------------------
+
+const PROPOSED = (n, extra = {}) => ({
+  productId: `product.id-${n}`, productTitle: `Hoodie ${n}`, angle: 'Warm for fall.',
+  hook: 'Glowing fleece for fall', instagram: 'Glowing fleece for fall. Link in bio #uv',
+  facebook: `Glowing fleece for fall. https://www.everfluorescent.com/products/hoodie-${n}`,
+  sources: [], conflicts: [], ...extra,
+})
+const PROPOSAL = (drafts) => ({season: 'Fall — per the campaign', seasonKey: 'Fall 2026!', drafts})
+
+check('an agent proposal that passes becomes a draft awaiting review on both platforms', () => {
+  const {create, skipped} = planAgentDrafts(PROPOSAL([PROPOSED(1)]), {products: [PRODUCT(1)], posts: []})
+  assert.deepEqual(skipped, [])
+  const [doc] = create
+  assert.equal(doc._id, 'drafts.agent-fall-2026-product-id-1')
+  assert.equal(doc.title, 'Fall 2026: Hoodie 1')
+  assert.equal(doc.hook, 'Glowing fleece for fall')
+  assert.equal(doc.products[0]._ref, 'product.id-1')
+  assert.deepEqual(doc.variants.map((v) => v.platform), ['instagram', 'facebook'])
+  assert.ok(doc.variants.every((v) => v.status === 'needs_review' && v.assets[0].asset._ref === 'image-abc1-1000x1000-jpg'))
+  assert.equal(doc.variants[0].caption, 'Glowing fleece for fall. Link in bio #uv')
+})
+
+check('agent ids are stable per season and product, and contain no dots', () => {
+  assert.equal(agentPostId('fall-2026', 'product.id-12'), agentPostId('Fall 2026', 'product.id-12'))
+  assert.doesNotMatch(agentPostId('fall.2026', 'product.id-12'), /\./)
+  assert.equal(seasonLabel('halloween-2026'), 'Halloween 2026')
+})
+
+check('the agent is checked against the dataset, not trusted', () => {
+  const data = {products: [PRODUCT(2, {storeStatus: 'archived'}), PRODUCT(3, {image: null}), PRODUCT(4)], posts: []}
+  const {create, skipped} = planAgentDrafts(PROPOSAL([
+    PROPOSED(1),
+    PROPOSED(2),
+    PROPOSED(3),
+    PROPOSED(4, {hook: 'A hook that runs to seven words'}),
+  ]), data)
+  assert.equal(create.length, 0)
+  assert.deepEqual(skipped.map((s) => s.reason), [
+    'no product product.id-1 in the dataset',
+    'it is archived in the store',
+    'it has no image',
+    'the hook "A hook that runs to seven words" is 7 words; the limit is 5',
+  ])
+})
+
+check('a product that already has any post is not drafted again by the agent', () => {
+  const campaignPost = {_id: 'drafts.gen-camp-1-product.id-1', products: ['product.id-1']}
+  const earlierRun = {_id: 'agent-fall-2026-product-id-2', products: null}
+  const {create} = planAgentDrafts(PROPOSAL([PROPOSED(1), PROPOSED(2)]), {products: [PRODUCT(1), PRODUCT(2)], posts: [campaignPost, earlierRun]})
+  assert.equal(create.length, 0)
+})
+
+check('a caption preflight refuses is not written', () => {
+  const {create, skipped} = planAgentDrafts(PROPOSAL([PROPOSED(1, {instagram: 'x'.repeat(2300)})]), {products: [PRODUCT(1)], posts: []})
+  assert.equal(create.length, 0)
+  assert.match(skipped[0].reason, /^instagram: Caption is 2300 characters/)
+})
+
+check('MCP tools are named by endpoint and routed back', () => {
+  const [tool] = toApiTools('kb', [{name: 'knowledge_base_read', inputSchema: {type: 'object'}}])
+  assert.equal(tool.name, 'kb__knowledge_base_read')
+  assert.deepEqual(routeToolName(tool.name), {prefix: 'kb', tool: 'knowledge_base_read'})
+  assert.equal(routeToolName('submit_drafts'), null)
 })
 
 // --- report --------------------------------------------------------------------
