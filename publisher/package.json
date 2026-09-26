@@ -9,7 +9,9 @@
     "generate": "node generate.mjs",
     "test": "node test/publisher.test.mjs",
     "vendor": "node tools/vendor-sync.mjs",
-    "verify": "node tools/vendor-sync.mjs --check"
+    "verify": "node tools/vendor-sync.mjs --check",
+    "context-check": "node --env-file=.env tools/context-check.mjs",
+    "draft": "node --env-file=.env draft-agent.mjs"
   },
   "engines": {
     "node": ">=18"

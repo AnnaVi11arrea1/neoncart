@@ -1,0 +1,257 @@
+/**
+ * The seasonal draft agent: Claude reads the shop through Sanity Context and
+ * proposes posts for the season ahead.
+ *
+ *   npm run draft                     propose drafts, print them, write nothing
+ *   npm run draft -- --weeks 10       look further ahead (default 8)
+ *   npm run draft -- --max 3          fewer proposals (default 5)
+ *
+ * It WRITES NOTHING yet. Step 4 of the implementation log adds the checks and
+ * the write; until then this is how the proposals are judged.
+ *
+ * The tool loop runs here rather than through the API's MCP connector, so the
+ * Context token never leaves this machine: Claude asks for a tool, this process
+ * calls Sanity Context and hands back what it said. Context is read-only, and
+ * the only other tool Claude has is `submit_drafts`, which ends the run.
+ *
+ * Tool names are prefixed by the endpoint they go to, because both serve an
+ * `initial_context`: `shop__` is products and campaigns, `kb__` the Knowledge
+ * Base (the website and the vault notes).
+ */
+import {connect} from './context.mjs'
+
+const MODEL = 'claude-opus-5'
+const MAX_TURNS = 25
+
+const ENDPOINTS = [
+  {prefix: 'shop', env: 'SANITY_CONTEXT_MCP_URL', what: 'products and campaigns in the shop dataset'},
+  {prefix: 'kb', env: 'SANITY_CONTEXT_KB_URL', what: 'the Knowledge Base: the everfluorescent website, brand voice, seasonal calendar and supplier notes'},
+]
+
+const SUBMIT_DRAFTS = {
+  name: 'submit_drafts',
+  description:
+    'Submit the proposed posts. Call this exactly once, when you are done researching. Every factual claim in a caption must come from a source listed on that draft.',
+  strict: true,
+  input_schema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['season', 'drafts'],
+    properties: {
+      season: {type: 'string', description: 'The season or occasion these posts are for, and its dates, as the calendar gives them.'},
+      drafts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['productId', 'productTitle', 'angle', 'hook', 'instagram', 'facebook', 'sources', 'conflicts'],
+          properties: {
+            productId: {type: 'string', description: 'The product document _id, exactly as the dataset has it.'},
+            productTitle: {type: 'string'},
+            angle: {type: 'string', description: 'One sentence: why this product, for this season.'},
+            hook: {type: 'string', description: 'The post title: 5 words or fewer, describing this product.'},
+            instagram: {type: 'string', description: 'Hook, at most two short sentences, "Link in bio", at most three hashtags.'},
+            facebook: {type: 'string', description: 'Hook, at most two short sentences, then the product store URL.'},
+            sources: {
+              type: 'array',
+              description: 'Every document or Knowledge Base entry a claim in the captions rests on.',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['title', 'ref'],
+                properties: {
+                  title: {type: 'string'},
+                  ref: {type: 'string', description: 'A document _id, or the Knowledge Base path or source URL.'},
+                },
+              },
+            },
+            conflicts: {
+              type: 'array',
+              description: 'Where two sources disagreed about something the captions touch: both claims, both sources, and which the caption follows and why. Empty when none.',
+              items: {type: 'string'},
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+export function systemPrompt({today, weeks, max}) {
+  return `You draft social posts for everfluorescent, a shop selling fluorescent and UV-reactive clothing and goods. A person reviews every draft before anything is posted, so a wrong claim costs their time and trust.
+
+Today is ${today}. Find the season or occasion in the next ${weeks} weeks that the seasonal calendar in the Knowledge Base says to post for, then choose up to ${max} products that suit it and propose one post for each, with an Instagram and a Facebook caption.
+
+How to work:
+- Start with the Knowledge Base: the seasonal calendar, the brand voice notes, and any supplier or restock notes. Then query the shop dataset for products and campaigns.
+- Only propose products that are active in the store and have at least one image.
+- Every fact in a caption (price, availability, shipping or delivery timing, materials, how or under what light it glows) must come from a source you read, and that source goes in the draft's sources.
+- A size range in a caption must match the sizes in the product's variants, not only its description: the description is written once and the variants are what can actually be bought.
+- When sources disagree about something a caption touches, record it in conflicts with both claims and both sources, and write the caption so it does not state the disputed claim.
+- Write in the brand voice the notes describe. No invented discounts, dates or promises.
+
+Keep every post brief and upbeat, to get people excited about the product:
+- A hook of 5 words or fewer. It opens both captions, and the post's image is the product's photo, so the hook must describe that product.
+- After the hook, at most two short sentences: the one or two things that make this product exciting now. Not a spec sheet: no fabric percentages, weights or care instructions unless one of them is the point.
+- Instagram ends with "Link in bio" and at most three hashtags. Facebook ends with the product's store URL.
+- Only products that suit the season. A swimsuit is not fall clothing.
+
+When you have the drafts, call submit_drafts once.`
+}
+
+/** MCP tool definitions → Messages API tools, named by endpoint. */
+export function toApiTools(prefix, mcpTools) {
+  return mcpTools.map((tool) => ({
+    name: `${prefix}__${tool.name}`,
+    description: tool.description ?? '',
+    input_schema: tool.inputSchema ?? {type: 'object', properties: {}},
+  }))
+}
+
+/** Split `shop__groq_query` back into its endpoint and tool. */
+export function routeToolName(name) {
+  const at = name.indexOf('__')
+  return at < 0 ? null : {prefix: name.slice(0, at), tool: name.slice(at + 2)}
+}
+
+function mcpResultText(result) {
+  return (result?.content ?? []).map((c) => (c.type === 'text' ? c.text : `[${c.type} omitted]`)).join('\n')
+}
+
+async function callClaude(body) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      // A declined request is re-run server-side on the model Anthropic
+      // recommends for that category, instead of coming back as a refusal.
+      'anthropic-beta': 'server-side-fallback-2026-07-01',
+      // Only for a key not scoped to a workspace, which must name one.
+      ...(process.env.ANTHROPIC_WORKSPACE_ID?.trim() ? {'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID.trim()} : {}),
+    },
+    body: JSON.stringify({fallbacks: 'default', ...body}),
+    signal: AbortSignal.timeout(10 * 60_000),
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) {
+    const detail = payload?.error?.message ?? `HTTP ${response.status}`
+    const hint = response.status === 401 ? ' — ANTHROPIC_API_KEY is missing or wrong' : ''
+    throw new Error(`Claude: ${detail}${hint}`)
+  }
+  return payload
+}
+
+export async function runAgent({today, weeks = 8, max = 5, log = () => {}} = {}) {
+  const token = process.env.SANITY_CONTEXT_TOKEN?.trim()
+  const missing = ['ANTHROPIC_API_KEY', 'SANITY_CONTEXT_TOKEN', ...ENDPOINTS.map((e) => e.env)].filter((k) => !process.env[k]?.trim())
+  if (missing.length) throw new Error(`Not configured. Missing in publisher/.env: ${missing.join(', ')}`)
+
+  const clients = {}
+  const tools = []
+  for (const endpoint of ENDPOINTS) {
+    const client = connect(process.env[endpoint.env].trim(), token)
+    await client.initialize()
+    clients[endpoint.prefix] = client
+    for (const tool of toApiTools(endpoint.prefix, await client.listTools())) {
+      tools.push({...tool, description: `[${endpoint.what}] ${tool.description}`})
+    }
+  }
+  tools.push(SUBMIT_DRAFTS)
+
+  const messages = [{role: 'user', content: `Propose the posts for the season ahead. Today is ${today}.`}]
+  const usage = {input: 0, cacheWrite: 0, cacheRead: 0, output: 0}
+  // Every turn resends everything before it. The marker on the system prompt
+  // caches tools + instructions (the part that never changes within a run), and
+  // the top-level cache_control moves a second breakpoint to the end of the
+  // conversation each turn, so turn N reads turns 1..N-1 at a tenth of the price.
+  const system = [{type: 'text', text: systemPrompt({today, weeks, max}), cache_control: {type: 'ephemeral'}}]
+
+  for (let turn = 1; turn <= MAX_TURNS; turn++) {
+    const response = await callClaude({
+      model: MODEL,
+      max_tokens: 16000,
+      thinking: {type: 'adaptive'},
+      system,
+      cache_control: {type: 'ephemeral'},
+      tools,
+      messages,
+    })
+    usage.input += response.usage?.input_tokens ?? 0
+    usage.cacheWrite += response.usage?.cache_creation_input_tokens ?? 0
+    usage.cacheRead += response.usage?.cache_read_input_tokens ?? 0
+    usage.output += response.usage?.output_tokens ?? 0
+
+    if (response.stop_reason === 'refusal') throw new Error('Claude declined the request, and the fallback model did too.')
+    if (response.stop_reason === 'max_tokens') throw new Error('Claude ran out of output room mid-turn; nothing was submitted.')
+
+    // The whole content goes back, thinking blocks included, so the next turn
+    // continues from exactly what the model produced.
+    messages.push({role: 'assistant', content: response.content})
+
+    const calls = response.content.filter((block) => block.type === 'tool_use')
+    const submitted = calls.find((call) => call.name === SUBMIT_DRAFTS.name)
+    if (submitted) return {...submitted.input, usage, turns: turn}
+    if (!calls.length) throw new Error('Claude stopped without calling submit_drafts.')
+
+    // Every result goes back in one message, errors included, so parallel
+    // calls stay parallel and a failed read is something Claude can react to.
+    const results = await Promise.all(
+      calls.map(async (call) => {
+        const route = routeToolName(call.name)
+        const client = route && clients[route.prefix]
+        log(`  ${call.name} ${JSON.stringify(call.input).slice(0, 140)}`)
+        if (!client) return {type: 'tool_result', tool_use_id: call.id, is_error: true, content: `No such tool: ${call.name}`}
+        try {
+          const result = await client.callTool(route.tool, call.input)
+          return {type: 'tool_result', tool_use_id: call.id, is_error: Boolean(result?.isError), content: mcpResultText(result) || '(empty)'}
+        } catch (error) {
+          return {type: 'tool_result', tool_use_id: call.id, is_error: true, content: error.message}
+        }
+      }),
+    )
+    messages.push({role: 'user', content: results})
+  }
+  throw new Error(`No drafts after ${MAX_TURNS} turns.`)
+}
+
+/** Token counts and what they cost at Opus 5 list prices ($5 in, $25 out per MTok). */
+export function tokens({input, cacheWrite, cacheRead, output}) {
+  const dollars = (input * 5 + cacheWrite * 6.25 + cacheRead * 0.5 + output * 25) / 1e6
+  return `${input} input + ${cacheWrite} cache-write + ${cacheRead} cache-read / ${output} output tokens (~$${dollars.toFixed(2)})`
+}
+
+export function formatProposal(proposal) {
+  const lines = [`Season: ${proposal.season}`, '']
+  for (const [i, d] of proposal.drafts.entries()) {
+    lines.push(`${i + 1}. ${d.productTitle}  (${d.productId})`, `   Hook: ${d.hook}`, `   ${d.angle}`, '')
+    lines.push('   Instagram:', ...d.instagram.split('\n').map((l) => `     ${l}`), '')
+    lines.push('   Facebook:', ...d.facebook.split('\n').map((l) => `     ${l}`), '')
+    lines.push('   Sources:', ...d.sources.map((s) => `     - ${s.title} (${s.ref})`))
+    if (d.conflicts.length) lines.push('   Conflicts:', ...d.conflicts.map((c) => `     ! ${c}`))
+    lines.push('')
+  }
+  return lines.join('\n')
+}
+
+const isMain = process.argv[1]?.endsWith('draft-agent.mjs')
+
+if (isMain) {
+  const arg = (name, fallback) => {
+    const at = process.argv.indexOf(`--${name}`)
+    const value = at > 0 ? Number(process.argv[at + 1]) : fallback
+    if (!Number.isInteger(value) || value < 1) throw new Error(`--${name} must be a whole number above 0`)
+    return value
+  }
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    console.log(`[draft-agent] ${MODEL}, looking ${arg('weeks', 8)} weeks ahead from ${today}`)
+    const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), log: console.log})
+    console.log(`\n${formatProposal(proposal)}`)
+    console.log(`[draft-agent] ${proposal.drafts.length} proposal(s) in ${proposal.turns} turn(s), ${tokens(proposal.usage)}. Nothing was written.`)
+  } catch (error) {
+    console.error(`[draft-agent] ${error.message}`)
+    process.exit(1)
+  }
+}

@@ -91,6 +91,33 @@ has a post in the campaign — generated or made by hand — is left alone. Dele
 a generated post does not stop it coming back; take the product off the campaign
 instead.
 
+## Seasonal drafts (the agent)
+
+`npm run draft` asks Claude to find the season ahead and propose short posts for
+products that suit it. It reads the shop and the Knowledge Base through Sanity
+Context, and it **writes nothing yet**: it prints the proposals, each with the
+sources behind its claims and any place two sources disagreed.
+
+```bash
+npm run context-check        # both Context endpoints answer and list their tools
+npm run draft                # propose up to 5, looking 8 weeks ahead
+npm run draft -- --max 3 --weeks 10
+```
+
+The tool loop runs here, not through the API's MCP connector, so the Context
+token never leaves this machine. `context.mjs` is the MCP client; Context is
+read-only. It needs, in `.env`:
+
+| | |
+| --- | --- |
+| `SANITY_CONTEXT_TOKEN` | an **organization** token with the Context role. A project token gets a 403. |
+| `SANITY_CONTEXT_MCP_URL` | the `neoncart-drafts` endpoint: products and campaigns |
+| `SANITY_CONTEXT_KB_URL` | the same URL with `?mode=knowledge_base&knowledgeBases=kb…`. Name the Knowledge Base here, not as an endpoint source: next to a dataset source it is ignored. |
+| `ANTHROPIC_API_KEY` | and `ANTHROPIC_WORKSPACE_ID` if the key is not scoped to a workspace |
+
+A run costs roughly $0.40 with prompt caching; the last line prints the tokens
+and an estimate.
+
 ## What it writes
 
 One file: `data/decisions.jsonl`, append-only.
