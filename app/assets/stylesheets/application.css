@@ -513,6 +513,20 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
 }
 .post-queue__card { min-width: 0; overflow-wrap: anywhere; }
 .post-queue__card .page-head { margin: 0 0 12px; }
+/* The draft agent's notes. Conflicts are cyan rather than danger-red: they are
+   worth reading before approving, but the caption already avoids the disputed
+   claim, so they never block. Sources fold away; most reviews won't open them. */
+.post-queue__conflicts {
+  margin: 0 0 12px; padding: 10px 14px; font-size: 14px;
+  border: 1px solid var(--cyan); border-radius: var(--radius-sm);
+  background: rgba(46, 230, 255, 0.06); color: var(--ink);
+}
+.post-queue__conflicts strong { color: var(--cyan); }
+.post-queue__sources { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.post-queue__sources summary { cursor: pointer; }
+.post-queue__sources ul { margin: 6px 0 0; padding-left: 18px; }
+.post-queue__sources li { margin: 2px 0; color: var(--ink); }
+.post-queue__sources .mono { font-size: 12px; margin-left: 4px; }
 /* The publisher renders the platform card and this frames it, so the queue
    shows the same mock as the CMS rather than a 64px thumbnail of the photo.
    Sized to the card's own 380px plus its padding; it scrolls if a caption runs

@@ -405,7 +405,8 @@ if (isMain) {
     console.log(`[draft-agent] ${MODEL}, looking ${arg('weeks', 8)} weeks ahead from ${today}${write ? '' : ' (dry run: add --write to create drafts)'}`)
     const {load} = await import('./config.mjs')
     const {createClient} = await import('./sanity.mjs')
-    const client = createClient(load().sanity)
+    const config = load()
+    const client = createClient(config.sanity)
     const exclude = await productsWithPosts(client)
     if (exclude.length) console.log(`[draft-agent] ${exclude.length} product(s) already have a post and are excluded`)
     const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), exclude, log: console.log})
@@ -421,7 +422,7 @@ if (isMain) {
     } else {
       console.log('[draft-agent] Nothing was written.')
     }
-    recordRun(process.env.PUBLISHER_AGENT_LOG?.trim() || './data/agent-runs.jsonl', proposal, plan)
+    recordRun(config.agentLogPath, proposal, plan)
   } catch (error) {
     console.error(`[draft-agent] ${error.message}`)
     process.exit(1)

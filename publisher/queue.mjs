@@ -101,7 +101,7 @@ function verdictFor(variant, assets, products, account) {
  * does not move the status — that is the contract's rule, and the reason a
  * decided variant leaves this queue at all.
  */
-export function buildQueue({data, client, decisions, config}) {
+export function buildQueue({data, client, decisions, config, notes = null}) {
   const accounts = (data?.accounts ?? []).filter((a) => a && a.active !== false)
   const accountFor = (platform) => accounts.find((a) => a.platform === platform) ?? null
 
@@ -118,6 +118,9 @@ export function buildQueue({data, client, decisions, config}) {
       const assets = (variant.assets ?? []).map((a) => assetInfo(a, client))
       const cover = assets[0] ?? null
       const verdict = verdictFor(variant, assets, post.products, accountFor(variant.platform))
+      // Only posts the draft agent wrote have these. Optional in the contract,
+      // so a hand-made post's row simply goes without.
+      const note = notes?.get(publishedId(post._id))
 
       rows.push({
         id,
@@ -135,6 +138,7 @@ export function buildQueue({data, client, decisions, config}) {
           .filter(Boolean)
           .map((p) => ({store_id: p.storeId ?? null, title: p.title ?? null})),
         verdict,
+        ...(note ? {sources: note.sources, conflicts: note.conflicts} : {}),
       })
     }
   }

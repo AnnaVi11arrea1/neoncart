@@ -18,6 +18,7 @@ import {load} from './config.mjs'
 import {createClient, SanityError} from './sanity.mjs'
 import {openDecisions, DECISIONS} from './decisions.mjs'
 import {buildQueue, fetchQueueData, findRow, recheck} from './queue.mjs'
+import {loadAgentNotes} from './agent-notes.mjs'
 import {PreviewError, renderPreview, verifyPreview} from './preview.mjs'
 import {splitVariantId} from './ids.mjs'
 import {logPlan, runGeneration} from './generate.mjs'
@@ -84,7 +85,7 @@ export function createApp({config, client, decisions}) {
 
   async function pending(res) {
     const data = await fetchQueueData(client)
-    const posts = buildQueue({data, client, decisions, config})
+    const posts = buildQueue({data, client, decisions, config, notes: loadAgentNotes(config.agentLogPath)})
     sendJson(res, 200, {posts})
   }
 

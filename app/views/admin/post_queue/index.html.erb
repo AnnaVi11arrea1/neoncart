@@ -78,6 +78,32 @@
           </p>
         <% end %>
 
+        <% if post.conflicts.any? %>
+          <%# The agent found two sources disagreeing and wrote around it. Shown
+              above the buttons because it is the thing most worth checking,
+              but never blocking: the caption already avoids the disputed claim. %>
+          <div class="post-queue__conflicts" role="note">
+            <strong>Sources disagreed:</strong>
+            <% post.conflicts.each do |text| %><br><%= text %><% end %>
+          </div>
+        <% end %>
+
+        <% if post.sources.any? %>
+          <details class="post-queue__sources">
+            <summary>Drafted from <%= pluralize(post.sources.size, "source") %></summary>
+            <ul>
+              <% post.sources.each do |source| %>
+                <li>
+                  <%= source[:url] ? link_to(source[:title], source[:url], class: "linklike", target: "_blank", rel: "noopener noreferrer") : source[:title] %>
+                  <% if source[:ref].present? && source[:url].nil? && source[:ref] != source[:title] %>
+                    <span class="hint mono"><%= source[:ref] %></span>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          </details>
+        <% end %>
+
         <% if post.unchecked? %>
           <p class="hint">The publisher has not checked this one yet. It runs its own checks again at the moment it sends, so approving is safe — the send is what would refuse.</p>
         <% end %>

@@ -55,7 +55,9 @@ the store does not re-sort them.
         "ok": false,
         "errors": [{ "message": "No price on Neon Moth print, so the shop link cannot be built" }],
         "warnings": [{ "message": "Clip is 91s; Instagram reels allow 90s" }]
-      }
+      },
+      "sources": [{ "title": "Neon Moth print (product document)", "ref": "product.id-412" }],
+      "conflicts": ["Sizes: the description says XS–4XL, the variants stop at XXL"]
     }
   ]
 }
@@ -100,6 +102,15 @@ there is nothing to address a decision to.
 - `verdict.warnings` are shown and do not block.
 - **No `verdict` at all is not a clean one.** The page says so rather than
   showing a green tick.
+- `sources` — only on posts the draft agent wrote: what each claim in the
+  caption rests on. `title` says what it is; `ref` is a CMS document id, a
+  Knowledge Base path, or a URL. Shown on the card so a reviewer can see why a
+  caption says what it says. Only an `http(s)` ref is ever made a link.
+- `conflicts` — also agent-only: plain sentences, each naming two sources that
+  disagreed about something the caption touches and what the caption did about
+  it. Shown prominently, because a conflict is the thing most worth checking
+  before approving. Neither field blocks; an empty or missing list means nothing
+  to show, not that nothing was checked.
 
 ## `POST {base}/posts/{id}/decision`
 

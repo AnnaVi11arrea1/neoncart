@@ -15,6 +15,9 @@ const DEFAULTS = {
   SANITY_API_VERSION: '2024-10-01',
   PUBLISHER_PREVIEW_TTL: '900',
   PUBLISHER_DECISIONS_PATH: './data/decisions.jsonl',
+  // Where the draft agent appends its runs, and where the queue reads each
+  // agent post's sources and conflicts back from.
+  PUBLISHER_AGENT_LOG: './data/agent-runs.jsonl',
   // Seconds between campaign generation passes. 0 turns generation off.
   PUBLISHER_GENERATE_INTERVAL: '300',
 }
@@ -70,6 +73,7 @@ export function load(env = process.env) {
     // when nginx has not been given the location block yet.
     publicUrl: get('PUBLISHER_PUBLIC_URL').replace(/\/+$/, ''),
     decisionsPath: get('PUBLISHER_DECISIONS_PATH'),
+    agentLogPath: get('PUBLISHER_AGENT_LOG'),
     generateInterval,
     sanity: {
       projectId: get('SANITY_PROJECT_ID'),

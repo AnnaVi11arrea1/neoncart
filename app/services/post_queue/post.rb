@@ -74,6 +74,27 @@ module PostQueue
       Product.where(id: ids)
     end
 
+    # [{ title:, ref:, url: }] — what the draft agent based the caption on. Only
+    # its posts carry these. `ref` is a CMS id, a Knowledge Base path or a URL;
+    # `url` is set only when it is plainly http(s), same guard as `asset_url`.
+    def sources
+      Array(@attrs["sources"]).filter_map do |entry|
+        next unless entry.is_a?(Hash)
+
+        title = entry["title"].to_s.presence
+        ref = entry["ref"].to_s.presence
+        next unless title || ref
+
+        { title: title || ref, ref: ref, url: (ref if ref.to_s.match?(%r{\Ahttps?://}i)) }
+      end
+    end
+
+    # Places two sources disagreed about something the caption touches, as the
+    # agent described them. Worth reading before approving; never blocking.
+    def conflicts
+      Array(@attrs["conflicts"]).filter_map { |text| text.presence if text.is_a?(String) }
+    end
+
     def errors   = messages("errors")
     def warnings = messages("warnings")
 

@@ -18,6 +18,9 @@ import {openDecisions} from '../decisions.mjs'
 import {splitVariantId, variantId} from '../ids.mjs'
 import {previewUrl} from '../preview.mjs'
 import {captionFor, generatedId, planGeneration} from '../generate.mjs'
+import {writeFileSync} from 'node:fs'
+import {loadAgentNotes} from '../agent-notes.mjs'
+import {buildQueue} from '../queue.mjs'
 import {agentPostId, planAgentDrafts, routeToolName, seasonLabel, toApiTools} from '../draft-agent.mjs'
 
 const work = mkdtempSync(join(tmpdir(), 'publisher-test-'))
@@ -723,6 +726,34 @@ check('MCP tools are named by endpoint and routed back', () => {
   assert.equal(tool.name, 'kb__knowledge_base_read')
   assert.deepEqual(routeToolName(tool.name), {prefix: 'kb', tool: 'knowledge_base_read'})
   assert.equal(routeToolName('submit_drafts'), null)
+})
+
+check('the queue carries sources and conflicts for agent posts, and nothing for others', () => {
+  const log = join(work, 'agent-runs.jsonl')
+  const drafted = PROPOSED(1, {sources: [{title: 'Hoodie 1', ref: 'product.id-1'}], conflicts: ['Sizes disagree']})
+  const skipped = PROPOSED(2, {sources: [{title: 'never written', ref: 'x'}]})
+  writeFileSync(log, [
+    JSON.stringify({proposal: PROPOSAL([drafted, skipped]), written: ['drafts.agent-fall-2026-product-id-1'], skipped: []}),
+    '{"torn": ',
+    '',
+  ].join('\n'))
+  const notes = loadAgentNotes(log)
+  assert.deepEqual([...notes.keys()], ['agent-fall-2026-product-id-1'])
+
+  const variant = {_key: 'ig', platform: 'instagram', format: 'feed_image', caption: 'Hi', status: 'needs_review', assets: []}
+  const data = {posts: [
+    {_id: 'drafts.agent-fall-2026-product-id-1', title: 'Fall 2026: Hoodie 1', products: [], variants: [variant]},
+    {_id: 'drafts.by-hand', title: 'By hand', products: [], variants: [variant]},
+  ], accounts: []}
+  const rows = buildQueue({data, client: stubClient(data), decisions: {has: () => false}, config: CONFIG, notes})
+  const [agent, byHand] = rows
+  assert.deepEqual(agent.sources, [{title: 'Hoodie 1', ref: 'product.id-1'}])
+  assert.deepEqual(agent.conflicts, ['Sizes disagree'])
+  assert.equal('sources' in byHand, false)
+})
+
+check('no run log is an empty set of notes, not an error', () => {
+  assert.equal(loadAgentNotes(join(work, 'missing.jsonl')).size, 0)
 })
 
 // --- report --------------------------------------------------------------------
