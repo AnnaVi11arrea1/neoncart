@@ -15,9 +15,9 @@
     <p class="hint">Nothing has been approved or sent. Reload to try again.</p>
   </div>
 <% elsif @posts.any? %>
-  <div class="stack">
+  <div class="post-queue">
     <% @posts.each do |post| %>
-      <div class="panel">
+      <div class="panel post-queue__card">
         <div class="page-head">
           <div>
             <strong><%= post.platform.presence || "Unknown platform" %></strong>

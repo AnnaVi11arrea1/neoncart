@@ -502,6 +502,17 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
   width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-sm);
   border: 1px solid var(--border-bright); cursor: zoom-in;
 }
+/* Post queue: cards sit side by side, each as wide as the 404px preview plus
+   the panel's padding, and wrap to one column on a narrow screen. align-items:
+   start keeps a short card from stretching to match a tall neighbour. */
+.post-queue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 450px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.post-queue__card { min-width: 0; overflow-wrap: anywhere; }
+.post-queue__card .page-head { margin: 0 0 12px; }
 /* The publisher renders the platform card and this frames it, so the queue
    shows the same mock as the CMS rather than a 64px thumbnail of the photo.
    Sized to the card's own 380px plus its padding; it scrolls if a caption runs
