@@ -17,6 +17,7 @@ import {createApp} from '../server.mjs'
 import {openDecisions} from '../decisions.mjs'
 import {splitVariantId, variantId} from '../ids.mjs'
 import {previewUrl} from '../preview.mjs'
+import {captionFor, generatedId, planGeneration} from '../generate.mjs'
 
 const work = mkdtempSync(join(tmpdir(), 'publisher-test-'))
 let passed = 0
@@ -606,6 +607,55 @@ await checkAsync('an upstream failure is a 502 saying what happened', async () =
   const res = await call(app, {path: '/api/posts/pending', token: CONFIG.token})
   assert.equal(res.status, 502)
   assert.match(res.json.error, /SANITY_API_TOKEN/)
+})
+
+// --- campaign generation -------------------------------------------------------
+
+const PRODUCT = (n, extra = {}) => ({
+  _id: `product.id-${n}`, title: `Hoodie ${n}`, storeStatus: 'active',
+  storeUrl: `https://www.everfluorescent.com/products/hoodie-${n}`,
+  image: `image-abc${n}-1000x1000-jpg`, ...extra,
+})
+const FALL = {_id: 'camp-1', title: 'Fall', brief: 'Warm clothes.', products: [PRODUCT(1), PRODUCT(2)]}
+
+check('a campaign drafts one post per product, both platforms, awaiting review', () => {
+  const {create} = planGeneration({campaigns: [FALL], posts: []})
+  assert.equal(create.length, 2)
+  const [doc] = create
+  assert.equal(doc._id, `drafts.${generatedId('camp-1', 'product.id-1')}`)
+  assert.equal(doc.campaign._ref, 'camp-1')
+  assert.deepEqual(doc.variants.map((v) => v.platform), ['instagram', 'facebook'])
+  assert.ok(doc.variants.every((v) => v.status === 'needs_review' && v.format === 'feed_image'))
+  assert.equal(doc.variants[0].assets[0].asset._ref, 'image-abc1-1000x1000-jpg')
+})
+
+check('generated ids contain no dots, so a published one is not a private path', () => {
+  assert.doesNotMatch(generatedId('camp-1', 'product.id-12'), /\./)
+})
+
+check('a product already posted in the campaign is not drafted again, by hand or generated', () => {
+  const byHand = {_id: 'drafts.xyz', campaign: 'camp-1', products: ['product.id-1']}
+  const generated = {_id: generatedId('camp-1', 'product.id-2'), campaign: 'camp-1', products: null}
+  const {create} = planGeneration({campaigns: [FALL], posts: [byHand, generated]})
+  assert.equal(create.length, 0)
+})
+
+check('the same product in another campaign still gets its own post', () => {
+  const other = {_id: 'drafts.xyz', campaign: 'camp-OTHER', products: ['product.id-1']}
+  assert.equal(planGeneration({campaigns: [FALL], posts: [other]}).create.length, 2)
+})
+
+check('inactive and imageless products are skipped with a reason, missing ones ignored', () => {
+  const campaign = {...FALL, products: [PRODUCT(1, {storeStatus: 'archived'}), PRODUCT(2, {image: null}), null]}
+  const {create, skipped} = planGeneration({campaigns: [campaign], posts: []})
+  assert.equal(create.length, 0)
+  assert.deepEqual(skipped.map((s) => s.reason), ['it is archived in the store', 'it has no image'])
+})
+
+check('only Facebook captions carry the link, since Instagram ones are not clickable', () => {
+  const product = PRODUCT(1)
+  assert.doesNotMatch(captionFor('instagram', FALL, product), /https?:/)
+  assert.match(captionFor('facebook', FALL, product), /hoodie-1$/)
 })
 
 // --- report --------------------------------------------------------------------

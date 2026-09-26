@@ -20,6 +20,7 @@ import {openDecisions, DECISIONS} from './decisions.mjs'
 import {buildQueue, fetchQueueData, findRow, recheck} from './queue.mjs'
 import {PreviewError, renderPreview, verifyPreview} from './preview.mjs'
 import {splitVariantId} from './ids.mjs'
+import {logPlan, runGeneration} from './generate.mjs'
 
 const MAX_BODY = 64 * 1024
 
@@ -271,7 +272,31 @@ if (isMain) {
     )
   })
 
+  // Campaign drafts. A failed pass is logged and retried on the next tick; it
+  // never takes the queue down with it. Skips are logged only when they change,
+  // so a product with no image is not announced every five minutes.
+  let timer = null
+  if (config.generateInterval) {
+    let lastSkipped = null
+    const generate = async () => {
+      try {
+        const plan = await runGeneration(client)
+        const skipped = JSON.stringify(plan.skipped)
+        logPlan({create: plan.create, skipped: skipped === lastSkipped ? [] : plan.skipped})
+        lastSkipped = skipped
+      } catch (error) {
+        console.error(`[publisher] campaign generation failed: ${error.message}`)
+      }
+    }
+    generate()
+    timer = setInterval(generate, config.generateInterval * 1000)
+    console.log(`[publisher] generating campaign drafts every ${config.generateInterval}s`)
+  }
+
   for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => server.close(() => process.exit(0)))
+    process.on(signal, () => {
+      clearInterval(timer)
+      server.close(() => process.exit(0))
+    })
   }
 }

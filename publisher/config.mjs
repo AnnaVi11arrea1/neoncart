@@ -15,6 +15,8 @@ const DEFAULTS = {
   SANITY_API_VERSION: '2024-10-01',
   PUBLISHER_PREVIEW_TTL: '900',
   PUBLISHER_DECISIONS_PATH: './data/decisions.jsonl',
+  // Seconds between campaign generation passes. 0 turns generation off.
+  PUBLISHER_GENERATE_INTERVAL: '300',
 }
 
 // Everything the process cannot do its job without. A missing one is a startup
@@ -45,6 +47,11 @@ export function load(env = process.env) {
     throw new Error(`PUBLISHER_PREVIEW_TTL must be at least 30 seconds; got ${get('PUBLISHER_PREVIEW_TTL')}`)
   }
 
+  const generateInterval = Number(get('PUBLISHER_GENERATE_INTERVAL'))
+  if (!Number.isInteger(generateInterval) || (generateInterval !== 0 && generateInterval < 60)) {
+    throw new Error(`PUBLISHER_GENERATE_INTERVAL must be 0 (off) or at least 60 seconds; got ${get('PUBLISHER_GENERATE_INTERVAL')}`)
+  }
+
   if (get('PUBLISHER_TOKEN') === get('PUBLISHER_PREVIEW_SECRET')) {
     // A preview URL is handed to a browser. Reusing the store's bearer token as
     // the signing key would put material derived from it in a query string.
@@ -63,6 +70,7 @@ export function load(env = process.env) {
     // when nginx has not been given the location block yet.
     publicUrl: get('PUBLISHER_PUBLIC_URL').replace(/\/+$/, ''),
     decisionsPath: get('PUBLISHER_DECISIONS_PATH'),
+    generateInterval,
     sanity: {
       projectId: get('SANITY_PROJECT_ID'),
       dataset: get('SANITY_DATASET'),

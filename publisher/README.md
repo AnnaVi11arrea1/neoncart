@@ -76,6 +76,21 @@ build of it, rather than two implementations that drift. If the CMS ever becomes
 a git repository, the better arrangement is to import those two files directly
 and delete `vendor/` and `tools/` along with this paragraph.
 
+## Campaign drafts
+
+A published campaign with `autoGenerate` on, that has not ended, gets one draft
+post per product, with an Instagram and a Facebook `feed_image` variant at
+`needs_review`, the product's first image, and a caption templated from the
+product title and the campaign brief. They reach the queue like any other post.
+`generate.mjs` has the rules.
+
+The server runs a pass at startup and every `PUBLISHER_GENERATE_INTERVAL`
+seconds (default 300, `0` turns it off); `npm run generate` runs one now. It
+only creates drafts and never edits an existing post, and a product that already
+has a post in the campaign — generated or made by hand — is left alone. Deleting
+a generated post does not stop it coming back; take the product off the campaign
+instead.
+
 ## What it writes
 
 One file: `data/decisions.jsonl`, append-only.
