@@ -106,6 +106,12 @@ npm run draft -- --write     # ...and create what passes the checks, for review
 npm run draft -- --max 3 --weeks 10
 ```
 
+Everything is made to order, so each caption carries an order-by date: the
+occasion's date from the calendar minus 21 days, or 30 for Christmas and New
+Year's (`LEAD_DAYS` and `HOLIDAY_LEAD_DAYS` in `draft-agent.mjs`). An occasion
+whose order-by date has passed is skipped for a later one, and one the calendar
+gives no date for gets no order-by line.
+
 Claude proposes; `planAgentDrafts` decides. Before anything is written, each
 proposal is checked against the dataset as it is now: the product exists, is
 active and has an image, the hook is five words or fewer, and both captions pass

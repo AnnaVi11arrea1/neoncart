@@ -6,6 +6,7 @@
  *   npm run draft -- --weeks 10       look further ahead (default 8)
  *   npm run draft -- --max 3          fewer proposals (default 5)
  *   npm run draft -- --write          also create them as drafts for review
+ *   npm run draft -- --no-cache       no prompt caching, to compare cost and speed
  *
  * Without --write it only prints. With it, each proposal is checked against the
  * dataset as it is now (planAgentDrafts) and what passes is created as a draft
@@ -30,10 +31,13 @@ import {publishedId} from './ids.mjs'
 
 const MODEL = 'claude-opus-5'
 const MAX_TURNS = 25
+// Days before an occasion a made-to-order item must be ordered to arrive in time.
+const LEAD_DAYS = 21
+const HOLIDAY_LEAD_DAYS = 30
 
 const ENDPOINTS = [
-  {prefix: 'shop', env: 'SANITY_CONTEXT_MCP_URL', what: 'products and campaigns in the shop dataset'},
-  {prefix: 'kb', env: 'SANITY_CONTEXT_KB_URL', what: 'the Knowledge Base: the everfluorescent website, brand voice, seasonal calendar and supplier notes'},
+  {prefix: 'shop', env: 'SANITY_CONTEXT_MCP_URL', what: 'the shop dataset: products, campaigns, and knowledgeNote documents including the Events and Holidays and Occasions calendar'},
+  {prefix: 'kb', env: 'SANITY_CONTEXT_KB_URL', what: 'the Knowledge Base: the everfluorescent website, brand voice and supplier notes'},
 ]
 
 const SUBMIT_DRAFTS = {
@@ -89,15 +93,21 @@ const SUBMIT_DRAFTS = {
 export function systemPrompt({today, weeks, max}) {
   return `You draft social posts for everfluorescent, a shop selling fluorescent and UV-reactive clothing and goods. A person reviews every draft before anything is posted, so a wrong claim costs their time and trust.
 
-Today is ${today}. Find the season or occasion in the next ${weeks} weeks that the seasonal calendar in the Knowledge Base says to post for, then choose up to ${max} products that suit it and propose one post for each, with an Instagram and a Facebook caption.
+Today is ${today}. Find the season or occasion in the next ${weeks} weeks that the calendar says to post for, then choose up to ${max} products that suit it and propose one post for each, with an Instagram and a Facebook caption.
 
 How to work:
-- Start with the Knowledge Base: the seasonal calendar, the brand voice notes, and any supplier or restock notes. Then query the shop dataset for products and campaigns.
+- The calendar is two knowledgeNote documents in the shop dataset, titled "Events" (festivals, kind "event") and "Holidays and Occasions" (kind "seasonal"). Read them with a GROQ query on the shop endpoint, e.g. *[_type == "knowledgeNote" && title in ["Events", "Holidays and Occasions"] && archived != true]{_id, title, body}, and cite them by _id. Ignore the older notes "Festivals and markets, 2026" and "Returns, shipping and turnaround": they are empty templates from an earlier sync. The season dates in the Context instructions only say which season it is; an occasion's date comes from the calendar. A holiday listed without a year is this year's, or next year's if it has passed.
+- Start with the calendar, then the Knowledge Base for brand voice, product details and any supplier or restock notes. Then query the shop dataset for products and campaigns.
 - Only propose products that are active in the store and have at least one image.
 - Every fact in a caption (price, availability, shipping or delivery timing, materials, how or under what light it glows) must come from a source you read, and that source goes in the draft's sources.
 - A size range in a caption must match the sizes in the product's variants, not only its description: the description is written once and the variants are what can actually be bought.
 - When sources disagree about something a caption touches, record it in conflicts with both claims and both sources, and write the caption so it does not state the disputed claim.
 - Write in the brand voice the notes describe. No invented discounts, dates or promises.
+
+Order-by dates. Everything is made to order, so a customer must order at least ${LEAD_DAYS} days before the occasion for it to arrive in time, or ${HOLIDAY_LEAD_DAYS} days for Christmas and New Year's. Using the occasion's date from the calendar:
+- Work out the last safe order date (the occasion's date minus the lead time) and put it in both captions, e.g. "Order by Oct 9 for Halloween". Cite the calendar entry the date came from.
+- If that date is before today, the occasion is too close: choose a later one instead.
+- If the calendar gives no date for the occasion, leave the order-by date out rather than guess one.
 
 Keep every post brief and upbeat, to get people excited about the product:
 - A hook of 5 words or fewer. It opens both captions, and the post's image is the product's photo, so the hook must describe that product.
@@ -171,7 +181,7 @@ export function userMessage(today, exclude = []) {
   return lines.join('\n')
 }
 
-export async function runAgent({today, weeks = 8, max = 5, exclude = [], log = () => {}} = {}) {
+export async function runAgent({today, weeks = 8, max = 5, exclude = [], cache = true, log = () => {}} = {}) {
   const token = process.env.SANITY_CONTEXT_TOKEN?.trim()
   const missing = ['ANTHROPIC_API_KEY', 'SANITY_CONTEXT_TOKEN', ...ENDPOINTS.map((e) => e.env)].filter((k) => !process.env[k]?.trim())
   if (missing.length) throw new Error(`Not configured. Missing in publisher/.env: ${missing.join(', ')}`)
@@ -194,15 +204,18 @@ export async function runAgent({today, weeks = 8, max = 5, exclude = [], log = (
   // caches tools + instructions (the part that never changes within a run), and
   // the top-level cache_control moves a second breakpoint to the end of the
   // conversation each turn, so turn N reads turns 1..N-1 at a tenth of the price.
-  const system = [{type: 'text', text: systemPrompt({today, weeks, max}), cache_control: {type: 'ephemeral'}}]
+  // --no-cache drops both markers, to measure what caching saves.
+  const cacheMarker = cache ? {cache_control: {type: 'ephemeral'}} : {}
+  const system = [{type: 'text', text: systemPrompt({today, weeks, max}), ...cacheMarker}]
 
   for (let turn = 1; turn <= MAX_TURNS; turn++) {
+    const started = performance.now()
     const response = await callClaude({
       model: MODEL,
       max_tokens: 16000,
       thinking: {type: 'adaptive'},
       system,
-      cache_control: {type: 'ephemeral'},
+      ...cacheMarker,
       tools,
       messages,
     })
@@ -210,6 +223,9 @@ export async function runAgent({today, weeks = 8, max = 5, exclude = [], log = (
     usage.cacheWrite += response.usage?.cache_creation_input_tokens ?? 0
     usage.cacheRead += response.usage?.cache_read_input_tokens ?? 0
     usage.output += response.usage?.output_tokens ?? 0
+    // One line per request, so cache hits can be read against how long it took.
+    const u = response.usage ?? {}
+    log(`  [turn ${turn}] ${((performance.now() - started) / 1000).toFixed(1)}s — ${u.input_tokens ?? 0} in, ${u.cache_creation_input_tokens ?? 0} cache-write, ${u.cache_read_input_tokens ?? 0} cache-read, ${u.output_tokens ?? 0} out`)
 
     if (response.stop_reason === 'refusal') throw new Error('Claude declined the request, and the fallback model did too.')
     if (response.stop_reason === 'max_tokens') throw new Error('Claude ran out of output room mid-turn; nothing was submitted.')
@@ -409,7 +425,7 @@ if (isMain) {
     const client = createClient(config.sanity)
     const exclude = await productsWithPosts(client)
     if (exclude.length) console.log(`[draft-agent] ${exclude.length} product(s) already have a post and are excluded`)
-    const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), exclude, log: console.log})
+    const proposal = await runAgent({today, weeks: arg('weeks', 8), max: arg('max', 5), exclude, cache: !process.argv.includes('--no-cache'), log: console.log})
     console.log(`\n${formatProposal(proposal)}`)
     console.log(`[draft-agent] ${proposal.drafts.length} proposal(s) in ${proposal.turns} turn(s), ${tokens(proposal.usage)}.`)
 
