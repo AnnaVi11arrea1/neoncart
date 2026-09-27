@@ -3,8 +3,8 @@
 # ever ships without a description or canonical URL.
 module SeoHelper
   DEFAULT_DESCRIPTION =
-    "UV-reactive art on apparel, prints, and gear by independent artist Anna Villarreal. " \
-    "Original fluorescent designs that come alive under blacklight.".freeze
+    "Original art on apparel, prints, and gear by independent artist Anna Villarreal, " \
+    "printed to order and shipped from the artist's studio.".freeze
 
   MAX_DESCRIPTION = 160
 

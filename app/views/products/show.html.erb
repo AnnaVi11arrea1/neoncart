@@ -1,6 +1,6 @@
 <% product_description_text = @product.description.is_a?(ActionText::RichText) ? @product.description.to_plain_text : @product.description.to_s %>
 <% content_for :title, "#{@product.title} · #{store_name}" %>
-<% content_for :description, product_description_text.presence || "#{@product.title} — UV-reactive artwork by Anna Villarreal, printed to order and shipped from an independent studio." %>
+<% content_for :description, product_description_text.presence || "#{@product.title} — original artwork by Anna Villarreal, printed to order and shipped from an independent studio." %>
 <% content_for :og_type, "product" %>
 <% if (og = @product.all_image_urls.first).present? %><% content_for :og_image, absolute_image_url(og) %><% end %>
 <% content_for :structured_data do %>
@@ -164,7 +164,7 @@
 
 <% if @related.any? %>
   <section class="section">
-    <h2 class="section__title">Also glowing</h2>
+    <h2 class="section__title">You might also like</h2>
     <div class="product-grid">
       <% @related.each do |product| %><%= render "shared/product_card", product: product %><% end %>
     </div>
