@@ -42,7 +42,11 @@ class CheckoutsController < ApplicationController
   def build_order_from(cart)
     Order.create!(user: current_user, email: current_user&.email, currency: "usd",
                   subtotal_cents: cart.subtotal_cents, total_cents: cart.subtotal_cents,
-                  credit_applied_cents: credit_to_apply(cart)).tap do |order|
+                  credit_applied_cents: credit_to_apply(cart),
+                  # So the server-side purchase (Ga4PurchaseJob) joins this visitor's
+                  # GA4 session and keeps its ad / search attribution.
+                  ga_client_id: Ga4MeasurementProtocol.client_id_from(cookies),
+                  ga_session_id: Ga4MeasurementProtocol.session_id_from(cookies)).tap do |order|
       cart.cart_items.includes(:product, :variant).each do |ci|
         order.order_items.create!(
           product: ci.product, variant: ci.variant, supplier: ci.product.supplier,

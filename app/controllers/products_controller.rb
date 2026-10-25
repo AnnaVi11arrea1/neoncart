@@ -64,6 +64,10 @@ class ProductsController < ApplicationController
       redirect_target = Product.active.find_by_old_slug(params[:slug])
       return redirect_to product_path(redirect_target), status: :moved_permanently if redirect_target
 
+      # A handle from the old Shopify store (config/legacy_redirects.yml)
+      legacy_target = LegacyRedirects.for_product(params[:slug])
+      return redirect_to legacy_target, status: :moved_permanently if legacy_target
+
       raise ActiveRecord::RecordNotFound
     end
     @variants = @product.variants.available
