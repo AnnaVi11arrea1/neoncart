@@ -6,6 +6,22 @@ Rails.application.routes.draw do
   resources :products, only: %i[index show], param: :slug
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
+  get "feeds/google.xml", to: "feeds#google", defaults: { format: "xml" }, as: :google_feed
+
+  # Old Shopify / Etsy URLs → 301 to the page that replaced them. The map is
+  # config/legacy_redirects.yml; old Shopify product handles are picked up by
+  # ProductsController#show, since they share /products/:slug.
+  scope controller: :legacy_redirects do
+    get "listing/:id(/:slug)", action: :listing, constraints: { id: /\d+/ }
+    get ":locale/listing/:id(/:slug)", action: :listing,
+        constraints: { locale: /[a-z]{2}(-[a-z]{2})?/, id: /\d+/ }
+    get "collections", action: :collection
+    get "collections/:handle/products/:product_slug", action: :collection
+    get "collections/:handle", action: :collection
+    get "search", action: :search
+    get "product/:slug/:id", action: :painting
+    LegacyRedirects.table["paths"].each_key { |path| get path, action: :path }
+  end
 
   get "privacy", to: "pages#privacy", as: :privacy
   get "returns", to: "pages#returns", as: :return_policy

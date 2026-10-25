@@ -1,0 +1,219 @@
+# Where links from the old storefronts land now. Google, Pinterest and old
+# social posts still carry Shopify and Etsy URLs; without these they 404.
+#
+# Built from the GA4 page paths those links actually brought visitors to.
+# Targets are paths on this site. A product that has since been renamed is
+# fine as a target — ProductsController follows old_slugs to the new URL.
+#
+# Anything under /listing/ or /collections/ that isn't listed here goes to
+# /products, so only entries with a better destination need adding.
+
+# Shopify product handles (/products/<handle>) → where that item lives now.
+products:
+  # Same item, old long Shopify handle
+  winged-cat-fleece-hoodie-mens-fleece-full-zip-hoodie-model-h60: /products/winged-cat-fleece-hoodie
+  winged-cat-full-zip-hooded-jackets: /products/winged-cat-fleece-hoodie
+  butterknot-hoodie-dress-all-over-print-hoodie-mini-dress-model-h27: /products/butterknot-hoodie-dress
+  dragons-nest-pink-new-all-over-print-t-shirt-for-men-model-t45: /products/dragons-nest-pink-t-shirt
+  dragons-nest-new-all-over-print-t-shirt-for-men-model-t45: /products/dragon-s-nest-t-shirt
+  starbirth-t-new-all-over-print-t-shirt-for-men-model-t45: /products/starbirth-t-shirt
+  cat-wings-new-all-over-print-t-shirt-for-men-model-t45: /products/winged-cat-t-shirt
+  drippy-kitty-new-all-over-print-t-shirt-for-men-model-t45: /products/drippy-kitty-t-shirt
+  electric-dragon-new-all-over-print-t-shirt-for-men-model-t45: /products/electric-dragon-t-shirt
+  pyschedelic-fantasy-new-all-over-print-t-shirt-for-men-model-t45: /products/psychedelic-fantasy-t-shirt
+  static-kenesis-t-new-all-over-print-t-shirt-for-men-model-t45: /products/static-kenesis-t-shirt
+  kitten-of-the-cosmos-new-all-over-print-t-shirt-for-men-model-t45: /products/kitten-of-the-cosmos-t-shirt
+  drippy-kitty-sweatpants-mens-all-over-print-sweatpants-model-l11: /products/drippy-kitty-sweatpants
+  starbirth-sweatpants-mens-all-over-print-sweatpants-model-l11: /products/starbirth-sweatpants
+  winged-cat-sweatpants-mens-all-over-print-sweatpants-model-l11: /products/winged-cat-sweatpants
+  psychedelia-sweatpants-mens-all-over-print-sweatpants-model-l11: /products/psychedelia-sweatpants
+  ego-death-psychedelic-baseball-jersey-all-over-print-baseball-jersey-for-men-model-t50: /products/ego-death-psychedelic-baseball-jersey
+  butterknot-board-shorts-mens-all-over-print-board-shorts-model-l16: /products/butterknot-board-shorts
+  ego-death-board-shorts-mens-all-over-print-board-shorts-model-l16: /products/ego-death-board-shorts
+  starbirth-board-shorts-mens-all-over-print-board-shorts-model-l16: /products/starbirth-board-shorts
+  star-birth-unisex-hoodie-with-pockets-91998: /products/starbirth-zipper-hoodie
+  snugglyhoodie-blanket-hoodie-for-women: /products/butterknot-snuggie
+  starbirth-sports-shoe: /products/starbirth-high-tops
+  stretch-bell-bottoms-drippy-kitty: /products/drippy-kitty-flare-pants
+  stretch-bell-bottoms-starbirth: /products/starbirth-flare-pants-2
+
+  # Paintings sold through the old shop
+  winged-cat: /gallery/winged-cat
+  static-kenesis-painting: /gallery/static-kenesis
+  tentacle-lotus-anna-villarreal-2022: /gallery
+
+  # Retired items → the nearest thing still for sale
+  lost-dino-stretch-bell-bottoms-lost-lands: /products?q=flare
+  space-disco-stretch-bell-bottoms: /products?q=flare
+  lotus-print-stretch-bell-bottom-flare-28003: /products?q=flare
+  stretch-bell-bottom-frequency-journey-46920: /products?q=flare
+  stretch-bell-bottom-hexagon-02337: /products?q=flare
+  trippy-rainbow-stretch-bell-bottoms: /products?q=flare
+  stretch-bell-bottoms-butterknot: /products?q=flare
+  winged-cat-stretch-bell-bottoms: /products?q=flare
+  atlas-elephant-stretch-bell-bottoms: /products?q=flare
+  plasma-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  starbirth-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  dragons-nest-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  drippy-kitty-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  electric-dragon-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  fernguly-sport-top-high-waisted-bikini-swimsuit-model-s07: /products?q=bikini
+  star-birth-one-piece-swimsuit-66577: /products?q=bikini
+  butterknot-one-piece-swimsuit: /products?q=bikini
+  static-kinesis-one-piece-swimsuit: /products?q=bikini
+  lost-dinos-one-piece-swimsuit: /products?q=bikini
+  winged-cat-one-piece-swimsuit: /products?q=bikini
+  hexagonal-all-over-print-basketball-jersey: /products?q=jersey
+  tribal-drip-all-over-print-basketball-jersey: /products?q=jersey
+  tribal-rainbow-tank-baseball-jersey-31938: /products?q=jersey
+  butterknot-cross-body-bag: /products?q=bag
+  atlas-elephant-cross-body-bag: /products?q=bag
+  psychedelic-fantasy-cross-body-bag: /products?q=bag
+  drippy-kitty-cross-body-bag: /products?q=bag
+  iceberg-cross-body-bag: /products?q=bag
+  lost-dinos-cross-body-bag: /products?q=bag
+  starbirth-cross-body-bag: /products?q=bag
+  winged-cat-cross-body-bag: /products?q=bag
+  travel-bags-by-anna-villarreal-07592: /products?q=bag
+  electric-dragon-space-fanny-pack-34677: /products?q=bag
+  more-weird-stuff-all-over-print-full-zip-hoodie-for-men-model-h14: /products?category=hoodies
+  elephant-atlas-zipper-hooide-with-plush: /products?category=hoodies
+  lost-dinos-long-hoodie-jacket: /products?category=hoodies
+  dragons-nest-zipper-hoodie-pink: /products?category=hoodies
+  most-def-not-tweed-new-all-over-print-t-shirt-for-men-model-t45: /products?category=shirts
+  elephant-atlas-t-shirt-99342: /products?category=shirts
+  ego-death-unisex-all-over-print-t-shirt: /products?category=shirts
+  ferngully-unisex-t-shirt: /products?category=shirts
+  mostdefnottweed-mens-all-over-print-sweatpants-model-l11: /products?category=pants
+  booth2-mens-all-over-print-sweatpants-model-l11: /products?category=pants
+  electric-dragon-fleece-hooded-blanket-98970: /products?category=blankets
+  dragons-nest-fleece-hooded-blanket: /products?category=blankets
+  excluded-rainbow-adjustable-strapback-hat-00630: /products?category=hats
+  trippy-rainbow-adjustable-strapback-hat-81830: /products?category=hats
+  psychedelia-festival-baseball-hat: /products?category=hats
+  starbirth-bucket-hat: /products?category=hats
+  festival-bucket-hat-rainbow-cat: /products?category=hats
+  men-casual-suit-blazer-with-pockets-rainbow-cat: /products
+  men-casual-suit-blazer-with-pockets-drippy-kitty: /products
+  men-casual-suit-blazer-with-pockets-starbirth-space: /products
+  elephant-atlas: /products
+  uv-jacket-space: /products
+  uv-jacket-rainbow: /products
+  uv-jacket-cool-rainbow: /products
+  chyrsanthemum-cloud-kimono: /products
+  psychedelic-kimono-robe-in-butterknot-print: /products
+
+# Etsy listing IDs (/listing/<id>/<slug>, with or without a /uk/, /de/ … prefix).
+listings:
+  "1695718689": /products/uv-reactive-winged-cat-tapestry    # cat with wings tapestry
+  "1665762581": /products/winged-cat-fleece-hoodie           # winged cat festival hoodie
+  "1681533586": /products/winged-cat-fleece-hoodie           # cat with wings full-zip hooded
+  "1665770885": /products/winged-cat-wide-leg-joggers        # psychedelic winged cat joggers
+  "1651589800": /products/winged-cat-t-shirt
+  "1096219075": /products/psychedelic-fantasy-t-shirt
+  "1096591998": /products/starbirth-zipper-hoodie
+  "1635717001": /products/drippy-kitty-two-piece-bikini
+  "1327398257": /products/drippy-kitty-flare-pants           # drippy kitty bell bottoms
+  "1327390489": /products/starbirth-flare-pants-2            # starbirth bell bottoms
+  "1492051826": /products/butterknot-hoodie-dress
+  "1860096261": /products/butterknot-hoodie-dress
+  "1845894184": /products/psychedelia-sweatpants
+  "1845922282": /products/ego-death-psychedelic-baseball-jersey
+  "1514480043": /products/starbirth-high-tops                # starbirth sports shoe
+  # Paintings and prints
+  "1677363864": /gallery/winged-cat
+  "1746995915": /gallery/winged-cat
+  "1691543637": /gallery/static-kenesis
+  "1747013249": /gallery/static-kenesis
+  "1747019213": /gallery/butterknot-sold
+  "1691562979": /gallery
+  "1746076387": /gallery
+  "1746271243": /gallery
+  "1761864525": /gallery
+  "1732044120": /gallery
+  "1746240435": /gallery
+  "1732076446": /gallery
+  "1732834656": /gallery
+  "1747002563": /gallery
+  "1732812090": /gallery
+  "1732820930": /gallery
+  "1731887982": /gallery
+  "1732082726": /gallery
+  # Retired items → nearest category
+  "1313421476": /products?q=flare                            # butterknot bell bottoms
+  "1313446920": /products?q=flare
+  "1777162699": /products?q=flare
+  "1327436361": /products?q=flare
+  "1327425135": /products?q=flare
+  "1327402337": /products?q=flare
+  "1349428003": /products?q=flare
+  "1732930632": /products?q=flare
+  "1746987805": /products?q=flare
+  "1681538366": /products?q=flare
+  "1651610204": /products?q=flare
+  "1747088209": /products?q=bikini                           # winged cat one-piece swimsuit
+  "1732883352": /products?q=bikini
+  "1747066577": /products?q=bikini
+  "1096605786": /products?q=bikini
+  "1732891330": /products?q=bikini
+  "1747101283": /products?q=bikini
+  "1092970580": /products?q=bikini
+  "1860095601": /products?q=bikini
+  "1491631938": /products?q=jersey
+  "1096586298": /products?q=bag
+  "1732876546": /products?category=hoodies
+  "1747094453": /products?category=hoodies
+  "1504126097": /products?category=hoodies
+  "1096235699": /products?category=hoodies
+  "1656333246": /products?category=hoodies
+  "1656347520": /products?category=hoodies
+  "1732798828": /products?category=hoodies
+  "1084155614": /products?category=pants
+  "1152236759": /products?category=pants
+  "1096213181": /products?category=pants
+  "1106316525": /products?category=pants
+  "1845894108": /products?category=pants
+  "1732799342": /products?category=shirts
+  "1845867316": /products?category=shirts
+  "988103827": /products?category=shirts
+  "1651586764": /products?category=shirts
+  "1082298970": /products?category=blankets
+  "1004351209": /products?category=blankets
+  "1096229403": /products?category=blankets
+  "1082298116": /products?category=tapestries
+  "1152278677": /products?category=tapestries
+  "1082281830": /products?category=hats
+  "1084446642": /products?category=hats
+  "1665807765": /products?category=hats
+  "1084127074": /products?category=hats
+  "1096222069": /products?category=hats
+  "1034669008": /products?category=hats
+  "1082300630": /products?category=hats
+  "1084132310": /products?category=hats
+  "1096220731": /products?category=hats
+  "1098622777": /products?category=hats
+  "1500296904": /products?category=hats
+  "1845862502": /products?category=hats
+
+# Shopify collection handles (/collections/<handle>).
+collections:
+  paintings: /gallery
+  tops: /products?category=shirts
+  bottoms: /products?category=pants
+  hats: /products?category=hats
+  hoodies-and-cloaks: /products?category=hoodies
+  tapestries-blankets: /products?category=tapestries
+  swim: /products?q=bikini
+  bags-purses-backpacks: /products?q=bag
+
+# Other Shopify / Etsy pages, by exact path.
+paths:
+  /pages/contact: /tickets/new
+  /policies/privacy-policy: /privacy
+  /policies/refund-policy: /returns
+  /policies/shipping-policy: /returns
+  /policies/terms-of-service: /privacy
+  /s/shop: /products
+  /s/stories: /
+  /art-gallery: /gallery
+  /pictures: /gallery

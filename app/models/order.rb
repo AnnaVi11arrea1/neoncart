@@ -53,6 +53,7 @@ class Order < ApplicationRecord
     Webhooks::Dispatcher.publish("order.paid", webhook_payload)
     DiscordOrderNotificationJob.perform_later(id)
     SubmitOrderToSuppliersJob.perform_later(id)
+    Ga4PurchaseJob.perform_later(id)
   end
 
   def mark_processing!
