@@ -2,15 +2,33 @@
 <div class="narrow">
   <h1>Open a support ticket</h1>
   <p class="hint">We reply by email and you can follow the thread right here.</p>
-  <%= form_with model: @ticket, url: tickets_path, class: "stack" do |f| %>
-    <% if @ticket.errors.any? %>
-      <div class="flash flash--alert"><%= @ticket.errors.full_messages.to_sentence %></div>
+  <% if Recaptcha.required? && !Recaptcha.configured? %>
+    <div class="flash flash--alert">The support form is down for maintenance. Email us at <%= mail_to store_email %> instead.</div>
+  <% else %>
+    <%= form_with model: @ticket, url: tickets_path, class: "stack" do |f| %>
+      <% if @ticket.errors.any? %>
+        <div class="flash flash--alert"><%= @ticket.errors.full_messages.to_sentence %></div>
+      <% end %>
+      <label class="field"><span>Your name</span><%= f.text_field :name %></label>
+      <% if user_signed_in? %>
+        <p class="hint">Signed in as <%= current_user.email %>.</p>
+      <% else %>
+        <label class="field"><span>Email</span><%= f.email_field :email, required: true, autocomplete: "email" %></label>
+        <label class="field"><span>Create a password</span><%= password_field_tag "account[password]", nil, required: true, minlength: 8, autocomplete: "new-password" %></label>
+        <label class="field"><span>Confirm password</span><%= password_field_tag "account[password_confirmation]", nil, required: true, minlength: 8, autocomplete: "new-password" %></label>
+        <p class="hint">This creates your account, so your tickets and orders are all in one place. Already have one? <%= link_to "Sign in", new_user_session_path %> first.</p>
+      <% end %>
+      <label class="field"><span>Subject</span><%= f.text_field :subject, required: true %></label>
+      <%= f.hidden_field :order_id %>
+      <label class="field"><span>How can we help?</span><%= f.text_area :body, rows: 6, required: true, name: "ticket[body]", value: params.dig(:ticket, :body) %></label>
+      <% if Recaptcha.required? %>
+        <div data-controller="recaptcha" data-recaptcha-site-key-value="<%= Recaptcha.site_key %>">
+          <div data-recaptcha-target="widget"></div>
+          <%= f.submit "Send", class: "btn btn--primary", hidden: true, data: { recaptcha_target: "submit" } %>
+        </div>
+      <% else %>
+        <%= f.submit "Send", class: "btn btn--primary" %>
+      <% end %>
     <% end %>
-    <label class="field"><span>Your name</span><%= f.text_field :name %></label>
-    <label class="field"><span>Email</span><%= f.email_field :email, required: true %></label>
-    <label class="field"><span>Subject</span><%= f.text_field :subject, required: true %></label>
-    <%= f.hidden_field :order_id %>
-    <label class="field"><span>How can we help?</span><%= f.text_area :body, rows: 6, required: true, name: "ticket[body]" %></label>
-    <%= f.submit "Send", class: "btn btn--primary" %>
   <% end %>
 </div>

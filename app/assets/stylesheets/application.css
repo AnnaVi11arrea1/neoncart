@@ -101,6 +101,7 @@ a:hover { text-decoration: underline; }
 }
 .btn:hover { text-decoration: none; border-color: var(--uv-violet); box-shadow: var(--glow-violet); transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
+.btn[hidden] { display: none; }
 .btn--primary { background: linear-gradient(135deg, var(--uv-violet), var(--magenta)); border-color: transparent; color: #fff; }
 .btn--primary:hover { box-shadow: 0 0 28px rgba(255, 46, 166, 0.45); }
 .btn--ghost { background: transparent; }
