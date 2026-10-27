@@ -136,31 +136,37 @@ def check_certs():
     summary.append("Certificates: " + ", ".join(parts))
 
 
-def check_feed():
-    status, _, body, _ = fetch(BASE + "/feeds/google.xml")
+def check_feed(path="/feeds/google.xml", label="Feed", plain=()):
+    """`plain` names fields the feed writes as bare RSS tags instead of g: ones."""
+    status, _, body, _ = fetch(BASE + path)
     if status != 200:
-        fail("Feed", f"/feeds/google.xml returned {status or 'no response'}")
-        summary.append("Feed: unavailable")
+        fail(label, f"{path} returned {status or 'no response'}")
+        summary.append(f"{label}: unavailable")
         return
     try:
         items = ET.fromstring(body).find("channel").findall("item")
     except (ET.ParseError, AttributeError) as e:
-        fail("Feed", f"not valid RSS: {e}")
-        summary.append("Feed: invalid")
+        fail(label, f"not valid RSS: {e}")
+        summary.append(f"{label}: invalid")
         return
+    tag = lambda f: f if f in plain else G + f
     ids = [i.findtext(G + "id") for i in items]
     if len(items) < FEED_MIN_ITEMS:
-        fail("Feed", f"only {len(items)} items (expected at least {FEED_MIN_ITEMS})")
+        fail(label, f"only {len(items)} items (expected at least {FEED_MIN_ITEMS})")
     if len(ids) != len(set(ids)):
-        fail("Feed", f"{len(ids) - len(set(ids))} duplicate ids")
-    incomplete = sum(1 for i in items if any(not (i.findtext(G + f) or "").strip() for f in FEED_REQUIRED))
+        fail(label, f"{len(ids) - len(set(ids))} duplicate ids")
+    incomplete = sum(1 for i in items if any(not (i.findtext(tag(f)) or "").strip() for f in FEED_REQUIRED))
     if incomplete:
-        fail("Feed", f"{incomplete} items missing a required field")
-    summary.append(f"Feed: {len(items)} items")
+        fail(label, f"{incomplete} items missing a required field")
+    summary.append(f"{label}: {len(items)} items")
+
+
+def check_pinterest_feed():
+    check_feed("/feeds/pinterest.xml", "Pinterest feed", plain=("title", "link"))
 
 
 def main():
-    for check in (check_pages, check_redirects, check_art_forwards, check_certs, check_feed):
+    for check in (check_pages, check_redirects, check_art_forwards, check_certs, check_feed, check_pinterest_feed):
         check()
 
     report = ["## Store health check", ""] + [f"- {line}" for line in summary]
