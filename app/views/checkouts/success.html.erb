@@ -10,6 +10,11 @@
           shipping: ga_price(@order.shipping_cents),
           items: @order_items.map { |oi| ga_order_item(oi) }
         }, once_key: "purchase:#{@order.number}") %>
+    <%= ga_event("conversion_event_purchase", {
+          transaction_id: @order.number,
+          currency: @order.currency.to_s.upcase,
+          value: ga_price(@order.total_cents)
+        }, once_key: "conversion_event_purchase:#{@order.number}") %>
     <p class="confirm__glyph">✦</p>
     <h1>Order confirmed</h1>
     <p>Thanks! Your order <span class="order-number mono"><%= @order.number %></span> is paid and heading into production.</p>
