@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
   get "feeds/google.xml", to: "feeds#google", defaults: { format: "xml" }, as: :google_feed
+  get "feeds/pinterest.xml", to: "feeds#pinterest", defaults: { format: "xml" }, as: :pinterest_feed
 
   # Old Shopify / Etsy URLs → 301 to the page that replaced them. The map is
   # config/legacy_redirects.yml; old Shopify product handles are picked up by
