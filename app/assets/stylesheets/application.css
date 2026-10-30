@@ -123,12 +123,24 @@ a:hover { text-decoration: underline; }
 /* Tightened so the first row of product cards clears the fold: the old hero
    pushed the grid ~780px down and 77% of visitors bounced off it. */
 .hero { padding: 40px 0 24px; text-align: center; }
-.hero__image {
-  width: 156px; height: 156px; object-fit: cover; border-radius: 50%;
-  margin: 0 auto 20px; display: block;
-  border: 2px solid var(--border-bright);
-  box-shadow: 0 0 0 6px rgba(139,61,255,0.15), 0 0 60px rgba(46,230,255,0.25);
+/* 3D neon logo (neon_logo_controller.js). Both layers are drawn on black and
+   screen-blended, so only the light shows over the page background. */
+.hero__logo { position: relative; width: min(480px, 100%); aspect-ratio: 16 / 7; margin: -12px auto 6px; }
+.hero__logo-poster, .hero__logo-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  mix-blend-mode: screen; transition: opacity 0.6s ease;
+  /* Let the glow fade out instead of stopping at the box edge. */
+  -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent),
+                linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent),
+        linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-composite: intersect;
 }
+.hero__logo-poster { object-fit: contain; }
+.hero__logo-canvas { opacity: 0; }
+.hero__logo.is-live .hero__logo-canvas { opacity: 1; }
+.hero__logo.is-live .hero__logo-poster { opacity: 0; }
 .hero__eyebrow { color: var(--cyan); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 18px; }
 .hero__title { font-size: clamp(30px, 5vw, 48px); line-height: 1.04; margin: 0 0 14px; font-weight: 700; }
 .hero__title { background: linear-gradient(180deg, #fff, #c9b8ff 60%, var(--uv-violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -379,7 +391,7 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
 @media (max-width: 560px) {
   .site-header__row { flex-direction: column; align-items: flex-start; }
   .hero { padding: 24px 0 16px; }
-  .hero__image { width: 124px; height: 124px; margin: 0 auto 14px; }
+  .hero__logo { margin: -8px auto 2px; }
   .hero__sub { font-size: 15px; margin: 0 auto 18px; }
   .cart__summary { margin-left: 0; }
 }
