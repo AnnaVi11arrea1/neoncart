@@ -5,7 +5,15 @@ class Product < ApplicationRecord
   has_many :product_images, -> { order(:position) }, dependent: :destroy
   has_many :reviews, dependent: :nullify
   has_many :favorites, dependent: :destroy
-  has_many_attached :images
+  # Uploads are full-size camera files (0.3-2.6MB). Pages show these WebP
+  # renditions instead: :card for product cards, the cart and gallery thumbs,
+  # :large for the product page's main image. Feeds, the API, Stripe and
+  # og:image keep the originals (see #all_image_urls). preprocessed: makes
+  # them on upload so the first visitor doesn't wait on the Jetson to resize.
+  has_many_attached :images do |attachable|
+    attachable.variant :card, resize_to_limit: [600, 600], format: :webp, saver: { quality: 80 }, preprocessed: true
+    attachable.variant :large, resize_to_limit: [1400, 1400], format: :webp, saver: { quality: 82 }, preprocessed: true
+  end
   has_one_attached :video
   has_rich_text :description
 
@@ -90,6 +98,13 @@ class Product < ApplicationRecord
     product_images.first&.remote_url
   end
 
+  # Small rendition for product cards and the cart.
+  def card_image_url
+    return image_path(ordered_images.first, :card) if images.attached?
+
+    product_images.first&.remote_url
+  end
+
   def all_image_urls
     urls = ordered_images.map { |i| Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true) }
     urls + product_images.map(&:remote_url).compact
@@ -103,7 +118,7 @@ class Product < ApplicationRecord
   end
 
   def gallery_images
-    items = ordered_images.map { |i| { url: Rails.application.routes.url_helpers.rails_blob_path(i, only_path: true), alt: i.metadata["alt"].presence || title } }
+    items = ordered_images.map { |i| { url: image_path(i, :large), thumb_url: image_path(i, :card), alt: i.metadata["alt"].presence || title } }
     items + product_images.filter_map { |pi| { url: pi.remote_url, alt: title } if pi.remote_url.present? }
   end
 
@@ -145,6 +160,15 @@ class Product < ApplicationRecord
   end
 
   private
+
+  # Path to a named rendition, or the original for files libvips can't
+  # resize (e.g. an SVG).
+  def image_path(image, variant)
+    helpers = Rails.application.routes.url_helpers
+    return helpers.rails_blob_path(image, only_path: true) unless image.variable?
+
+    helpers.rails_representation_path(image.variant(variant), only_path: true)
+  end
 
   def generate_slug
     return if slug.present?

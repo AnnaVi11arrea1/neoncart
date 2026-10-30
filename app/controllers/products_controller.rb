@@ -16,6 +16,8 @@ class ProductsController < ApplicationController
     def primary_image_url
       all_image_urls.first
     end
+
+    def card_image_url = primary_image_url
   end
 
   def index
