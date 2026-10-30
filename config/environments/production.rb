@@ -9,6 +9,11 @@ Rails.application.configure do
   config.assets.compile = false
 
   config.active_storage.service = :local
+  # Serve uploads through Rails with `Cache-Control: public, max-age=<1 year>`
+  # instead of redirecting to a short-lived signed URL. The default redirect
+  # mode sends `private, max-age=0`, so Cloudflare bypassed every image and
+  # each new visitor pulled them all from this box over the tunnel.
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # SSL is terminated at Nginx; Rails trusts the proxy headers.
   config.assume_ssl = true
