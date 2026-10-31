@@ -1,7 +1,7 @@
 <header class="site-header">
   <div class="container site-header__row">
     <%= link_to root_path, class: "brand" do %>
-      <span class="brand__mark">◈</span> <%= store_name %>
+      <%= image_tag "white-logosee-stamp.svg", alt: store_name, class: "brand__logo", width: 122, height: 44 %>
     <% end %>
     <nav class="site-nav">
       <%= nav_link "Shop", products_path %>

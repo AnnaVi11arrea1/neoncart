@@ -79,7 +79,8 @@ a:hover { text-decoration: underline; }
 .site-header__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
 .brand { color: var(--ink); font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .brand:hover { text-decoration: none; color: #fff; }
-.brand__mark { color: var(--magenta); text-shadow: var(--glow-cyan); }
+.brand { display: inline-flex; }
+.brand__logo { display: block; height: 44px; width: auto; }
 .site-nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .site-nav a, .site-nav .linklike { color: var(--muted); font-size: 14px; font-weight: 500; }
 .site-nav a:hover, .site-nav a.is-active { color: var(--ink); text-decoration: none; }
