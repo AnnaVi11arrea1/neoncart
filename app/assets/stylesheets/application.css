@@ -489,9 +489,22 @@ pre.mono { background: var(--bg-sunken); border: 1px solid var(--border); border
 .admin-thumb img { max-width: 260px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .admin-thumb__sm { width: 54px; height: 54px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }
 
-/* Reviews (Google + Facebook), shown site-wide above the footer */
+/* Google reviews (Places API), home page only, above the footer.
+   One swipeable row instead of a wall of cards. */
 .reviews { padding: 12px 0 8px; }
-.reviews__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.reviews__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; } /* product page */
+.reviews__summary { display: flex; align-items: center; gap: 8px; margin: -6px 0 14px; color: var(--muted); font-size: 14px; }
+.reviews__summary strong { color: var(--ink); }
+.reviews__track {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 320px); gap: 16px;
+  overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: thin;
+}
+.reviews__track > .review-card { scroll-snap-align: start; }
+.review-card--google .review-card__text { -webkit-line-clamp: 5; }
+.review-card--google .review-card__author { flex-direction: row; align-items: center; gap: 10px; }
+.review-card--google .review-card__author > span { display: flex; flex-direction: column; gap: 2px; }
+.review-card__avatar { width: 32px; height: 32px; border-radius: 50%; flex: none; }
+.review-card__meta a { color: inherit; }
 .review-card {
   background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 20px; margin: 0; display: flex; flex-direction: column; gap: 10px;

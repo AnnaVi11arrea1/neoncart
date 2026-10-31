@@ -70,3 +70,7 @@
     </div>
   <% end %>
 </section>
+
+<% content_for :after_main do %>
+  <%= render "shared/reviews", summary: @google_reviews %>
+<% end %>
