@@ -42,7 +42,7 @@
     <main class="container">
       <%= yield %>
     </main>
-    <%= render "shared/reviews" %>
+    <%= yield :after_main %>
     <%= render "shared/footer" %>
     <%= render "shared/analytics" %>
   </body>

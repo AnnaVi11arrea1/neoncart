@@ -1,5 +1,7 @@
 class HomeController < ApplicationController
   def index
+    @google_reviews = GoogleReviews.summary
+
     if preview_mode?
       @featured = preview_products.select(&:featured).first(4)
       @latest = preview_products.first(8)
